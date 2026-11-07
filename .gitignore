@@ -21,3 +21,8 @@ build/
 Thumbs.db
 Desktop.ini
 .DS_Store
+
+# Large release archives
+*.zip
+*.tar.gz
+

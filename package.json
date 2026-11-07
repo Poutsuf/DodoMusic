@@ -1,0 +1,36 @@
+{
+  "name": "dodospoti",
+  "version": "1.1.0",
+  "description": "DodoSpoti — стильный десктопный плеер с живыми реактивными видео-обоями, умной бесконечной волной, дискографиями артистов и системной интеграцией Windows",
+  "main": "electron-main.cjs",
+  "type": "module",
+  "scripts": {
+    "start": "electron electron-main.cjs",
+    "server": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/foridorpo-blip/DodoSpoti.git"
+  },
+  "keywords": [
+    "music",
+    "player",
+    "streaming",
+    "electron",
+    "desktop",
+    "smart-wave",
+    "live-wallpapers",
+    "audio-visualizer",
+    "windows"
+  ],
+  "author": "DodoSpoti Team",
+  "license": "MIT",
+  "dependencies": {
+    "@google/genai": "^2.29.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "googleapis": "^144.0.0"
+  }
+}
