@@ -175,8 +175,17 @@
                 </div>
 
                 <div class="section-title-row">
-                    <h3 id="waveQueueHeading">В очереди волны</h3>
-                    <span class="results-subtitle" id="waveQueueSub">Следующие похожие композиции</span>
+                    <div>
+                        <h3 id="waveQueueHeading">В очереди волны</h3>
+                        <span class="results-subtitle" id="waveQueueSub">Следующие похожие композиции</span>
+                    </div>
+                    <button id="clearWaveBtn" class="secondary-btn" style="padding: 6px 14px; font-size: 13px;" title="Очистить очередь волны">
+                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                        <span>Очистить волну</span>
+                    </button>
                 </div>
 
                 <div id="waveTracksContainer" class="tracks-grid"></div>
@@ -223,16 +232,7 @@
                     </div>
                 </div>
 
-                <!-- Альбомы и релизы -->
-                <div id="artistPlaylistsSection">
-                    <div class="section-title-row">
-                        <h3>Альбомы и релизы</h3>
-                        <span class="results-subtitle" id="artistPlaylistsCount">Официальные сборники</span>
-                    </div>
-                    <div id="artistPlaylistsContainer" class="playlists-grid"></div>
-                </div>
-
-                <!-- Популярные треки -->
+                <!-- Все треки артиста -->
                 <div class="section-title-row">
                     <h3>Все треки артиста</h3>
                     <span class="results-subtitle" id="artistTracksCount">Популярные композиции</span>

@@ -457,43 +457,7 @@ export async function getArtistProfileAndDiscography(artistName) {
         artistProfile.avatar = tracks[0].thumbnail;
     }
 
-    try {
-        const pRes = await fetch(
-            `https://api-v2.soundcloud.com/search/playlists?q=${encodeURIComponent(cleanName)}&client_id=${cid}&limit=12`,
-            {
-                headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
-                signal: AbortSignal.timeout(6000),
-            }
-        );
-        if (pRes.ok) {
-            const pData = await pRes.json();
-            playlists = (pData.collection || []).map((p) => ({
-                id: `pl_${p.id}`,
-                numericId: p.id,
-                title: p.title || 'Альбом',
-                artist: p.user?.username || cleanName,
-                trackCount: p.track_count || 0,
-                duration: formatDuration(Math.round((p.duration || 0) / 1000)),
-                thumbnail: p.artwork_url
-                    ? p.artwork_url.replace('-large', '-t500x500')
-                    : artistProfile.avatar,
-                permalinkUrl: p.permalink_url || '',
-            }));
-        }
-    } catch (_) {}
-
     if (isKme) {
-        playlists = playlists.filter((p) => {
-            const t = (p.title || '').toLowerCase();
-            return (
-                t.includes('kme') ||
-                t.includes('jungle') ||
-                t.includes('mvp') ||
-                t.includes('blade') ||
-                t.includes('джентльмен') ||
-                t.includes('dota')
-            );
-        });
         tracks.sort((a, b) => {
             const aHit = a.title.toLowerCase().startsWith('джентльмены') ? 1 : 0;
             const bHit = b.title.toLowerCase().startsWith('джентльмены') ? 1 : 0;
@@ -504,7 +468,6 @@ export async function getArtistProfileAndDiscography(artistName) {
     return {
         artist: artistProfile,
         tracks: tracks.slice(0, 50),
-        playlists: playlists.slice(0, 12),
     };
 }
 

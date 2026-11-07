@@ -102,10 +102,7 @@ const artistSourceLink = document.getElementById('artistSourceLink');
 const playAllArtistBtn = document.getElementById('playAllArtistBtn');
 const radioArtistBtn = document.getElementById('radioArtistBtn');
 const artistTracksContainer = document.getElementById('artistTracksContainer');
-const artistPlaylistsContainer = document.getElementById('artistPlaylistsContainer');
-const artistPlaylistsSection = document.getElementById('artistPlaylistsSection');
 const artistTracksCount = document.getElementById('artistTracksCount');
-const artistPlaylistsCount = document.getElementById('artistPlaylistsCount');
 const mainContent = document.querySelector('.main-content');
 
 function updateSliderFill(slider) {
@@ -366,16 +363,14 @@ async function fetchRelatedTracksForCurrent(track, forceRefresh = false) {
                 waveQueue = currentQueue.slice(currentIndex + 1);
 
                 if (smartWaveBanner) {
-                    const nextTrack = currentQueue[currentIndex + 1];
+                    const nextTrack = waveQueue[0] || currentQueue[currentIndex + 1];
                     const nextInfo = nextTrack
                         ? `Далее: ${decodeHtml(nextTrack.artist)} - ${decodeHtml(nextTrack.title)}`
                         : `В очереди: +${newTracks.length} треков`;
                     smartWaveStatusText.textContent = `Умная волна активна • В стиле «${decodeHtml(track.title)}» • ${nextInfo}`;
                 }
 
-                if (waveTracksContainer) {
-                    renderTracksGrid(waveTracksContainer, waveQueue);
-                }
+                renderWaveQueueView();
                 if (waveTitle) {
                     waveTitle.textContent = `Моя Волна: в стиле «${decodeHtml(track.title)}»`;
                 }
@@ -391,11 +386,48 @@ async function fetchRelatedTracksForCurrent(track, forceRefresh = false) {
     }
 }
 
+function renderWaveQueueView() {
+    if (!waveTracksContainer) return;
+    const waveQueueSub = document.getElementById('waveQueueSub');
+
+    if (waveQueue && waveQueue.length > 0) {
+        if (waveQueueSub) {
+            waveQueueSub.textContent = `В очереди волны: ${waveQueue.length} треков`;
+        }
+        renderTracksGrid(waveTracksContainer, waveQueue);
+    } else {
+        if (waveQueueSub) {
+            waveQueueSub.textContent = 'Очередь свободна';
+        }
+        waveTracksContainer.innerHTML = `
+            <div class="empty-state" style="grid-column: 1 / -1; padding: 48px 24px; text-align: center;">
+                <div style="font-size: 46px; margin-bottom: 12px;">🌊</div>
+                <h3 style="font-size: 19px; margin-bottom: 8px; color: #fff; font-weight: 700;">Очередь волны свободна</h3>
+                <p style="color: #a7a7a7; max-width: 440px; margin: 0 auto 20px; font-size: 14px; line-height: 1.5;">
+                    Здесь будут появляться похожие композиции, только когда играет ваша «Моя волна».<br>
+                    Включите любимый трек или нажмите кнопку ниже, чтобы запустить бесконечный поток!
+                </p>
+                <button id="waveStartEmptyBtn" class="primary-btn" style="margin: 0 auto; display: inline-flex;">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                    <span>Запустить волну</span>
+                </button>
+            </div>
+        `;
+        document.getElementById('waveStartEmptyBtn')?.addEventListener('click', () => {
+            if (startSmartWaveBtn) startSmartWaveBtn.click();
+        });
+    }
+}
+
 function startSmartWaveFromTrack(track) {
     isAutoWave = true;
     autoWaveBtn?.classList.add('active');
+    if (smartWaveBanner) smartWaveBanner.style.display = 'inline-flex';
     currentQueue = [track];
+    waveQueue = [];
     playTrackAtIndex(0);
+    renderWaveQueueView();
+    fetchRelatedTracksForCurrent(track, true);
     const waveTabBtn = document.querySelector('[data-tab="wave"]');
     if (waveTabBtn) waveTabBtn.click();
 }
@@ -443,6 +475,8 @@ async function playTrackAtIndex(index) {
 
     // Запускаем подбор умной волны для этого трека
     if (isAutoWave) {
+        waveQueue = currentQueue.slice(currentIndex + 1);
+        renderWaveQueueView();
         fetchRelatedTracksForCurrent(track);
     }
 
@@ -711,6 +745,22 @@ if (refreshWaveBtn) {
     });
 }
 
+const clearWaveBtn = document.getElementById('clearWaveBtn');
+if (clearWaveBtn) {
+    clearWaveBtn.addEventListener('click', () => {
+        waveQueue = [];
+        if (currentIndex >= 0 && currentIndex < currentQueue.length) {
+            currentQueue = [currentQueue[currentIndex]];
+            currentIndex = 0;
+        } else {
+            currentQueue = [];
+            currentIndex = -1;
+        }
+        renderWaveQueueView();
+        showSystemNotification('Моя волна', 'Очередь волны полностью очищена', 'info');
+    });
+}
+
 shuffleBtn.addEventListener('click', () => {
     isShuffle = !isShuffle;
     shuffleBtn.classList.toggle('active', isShuffle);
@@ -775,7 +825,7 @@ window.addEventListener('scroll', () => {
 });
 
 /**
- * Открытие страницы артиста: биография, аватарка, плейлисты и все треки
+ * Открытие страницы артиста: биография, аватарка и все треки
  */
 async function openArtistPage(artistName) {
     if (!artistName) return;
@@ -789,9 +839,8 @@ async function openArtistPage(artistName) {
 
     // Начальное состояние
     if (artistNameTitle) artistNameTitle.textContent = cleanName;
-    if (artistStats) artistStats.textContent = 'Загрузка профиля, треков и альбомов...';
+    if (artistStats) artistStats.textContent = 'Загрузка профиля и композиций...';
     if (artistTracksContainer) artistTracksContainer.innerHTML = '<div class="empty-state">Загружаем композиции...</div>';
-    if (artistPlaylistsContainer) artistPlaylistsContainer.innerHTML = '<div class="empty-state">Загружаем сборники и альбомы...</div>';
 
     try {
         const res = await fetch(`/api/artist-profile?artist=${encodeURIComponent(cleanName)}`);
@@ -810,23 +859,11 @@ async function openArtistPage(artistName) {
             artistSourceLink.href = artist.permalinkUrl || `https://soundcloud.com/search/people?q=${encodeURIComponent(cleanName)}`;
         }
 
-        // Треки
+        // Все треки артиста
         if (artistTracksCount) {
             artistTracksCount.textContent = `${data.tracks?.length || 0} композиций`;
         }
         renderTracksGrid(artistTracksContainer, data.tracks || []);
-
-        // Альбомы и плейлисты
-        const playlists = data.playlists || [];
-        if (artistPlaylistsCount) {
-            artistPlaylistsCount.textContent = `${playlists.length} сборников`;
-        }
-        if (playlists.length > 0 && artistPlaylistsSection) {
-            artistPlaylistsSection.style.display = 'block';
-            renderArtistPlaylists(artistPlaylistsContainer, playlists);
-        } else if (artistPlaylistsSection) {
-            artistPlaylistsSection.style.display = 'none';
-        }
 
         if (playAllArtistBtn) {
             playAllArtistBtn.onclick = () => {
@@ -850,42 +887,6 @@ async function openArtistPage(artistName) {
     }
 }
 
-function renderArtistPlaylists(container, playlists) {
-    if (!container) return;
-    container.innerHTML = '';
-    playlists.forEach((pl) => {
-        const card = document.createElement('div');
-        card.className = 'playlist-card';
-        card.innerHTML = `
-            <div class="playlist-cover-wrap">
-                <img src="${pl.thumbnail || '/icon.png'}" alt="${decodeHtml(pl.title)}" loading="lazy" />
-                <span class="platform-pill-badge">${pl.trackCount} треков</span>
-            </div>
-            <div class="playlist-card-title" title="${decodeHtml(pl.title)}">${decodeHtml(pl.title)}</div>
-            <div class="playlist-card-sub">${decodeHtml(pl.artist)} • ${pl.duration}</div>
-        `;
-
-        card.addEventListener('click', async () => {
-            card.style.opacity = '0.5';
-            try {
-                const res = await fetch(`/api/playlist-tracks?id=${pl.numericId}`);
-                if (!res.ok) throw new Error('Ошибка загрузки плейлиста');
-                const pData = await res.json();
-                if (pData.tracks && pData.tracks.length > 0) {
-                    currentQueue = pData.tracks;
-                    playTrackAtIndex(0);
-                }
-            } catch (err) {
-                console.error(err);
-            } finally {
-                card.style.opacity = '1';
-            }
-        });
-
-        container.appendChild(card);
-    });
-}
-
 // Навигация и карточки чартов
 document.querySelectorAll('.nav-item').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -896,10 +897,7 @@ document.querySelectorAll('.nav-item').forEach((btn) => {
         document.getElementById(tabId)?.classList.add('active');
 
         if (btn.dataset.tab === 'wave') {
-            const nextTracks = currentQueue.slice(currentIndex + 1);
-            if (waveTracksContainer) {
-                renderTracksGrid(waveTracksContainer, nextTracks.length > 0 ? nextTracks : currentQueue);
-            }
+            renderWaveQueueView();
         }
     });
 });
@@ -1365,10 +1363,9 @@ async function loadHomeFeed() {
         if (res.ok) {
             const data = await res.json();
             if (data.tracks && data.tracks.length > 0) {
-                currentQueue = data.tracks;
-                renderTracksGrid(tracksContainer, currentQueue);
+                renderTracksGrid(tracksContainer, data.tracks);
                 resultsHeading.textContent = 'Популярные треки';
-                resultsCount.textContent = `Топ треков: ${currentQueue.length} (полные версии)`;
+                resultsCount.textContent = `Топ треков: ${data.tracks.length} (полные версии)`;
                 return;
             }
         }
