@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Environment & credentials
+.env
+.env.local
+cache.json
+
+# Logs & temp
+*.log
+npm-debug.log*
+yarn-debug.log*
+electron-debug.log
+
+# Build intermediate
+dist/
+build/
+
+# OS files
+Thumbs.db
+Desktop.ini
+.DS_Store
