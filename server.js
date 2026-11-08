@@ -129,7 +129,7 @@ async function searchSoundCloudFullTracks(query) {
  */
 async function searchAudiusFullTracks(query) {
     try {
-        const url = `https://api.audius.co/v1/tracks/search?query=${encodeURIComponent(query)}&app_name=dodospoti`;
+        const url = `https://api.audius.co/v1/tracks/search?query=${encodeURIComponent(query)}&app_name=dodomusic`;
         const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
         if (!res.ok) return [];
         const data = await res.json();
@@ -146,7 +146,7 @@ async function searchAudiusFullTracks(query) {
                     duration: formatDuration(item.duration),
                     durationSeconds: item.duration,
                     thumbnail: item.artwork?.['480x480'] || item.artwork?.['150x150'] || '/icon.png',
-                    streamUrl: `https://api.audius.co/v1/tracks/${item.id}/stream?app_name=dodospoti`,
+                    streamUrl: `https://api.audius.co/v1/tracks/${item.id}/stream?app_name=dodomusic`,
                     protocol: 'progressive',
                     permalinkUrl: `https://audius.co${item.permalink || ''}`,
                     isFullTrack: true,
@@ -388,9 +388,9 @@ app.get('/api/stream-proxy', async (req, res) => {
 });
 
 /**
- * Получение треков чартов и плейлистов Spotify
+ * Получение треков чартов и плейлистов Chart
  */
-export async function getSpotifyPlaylistTracks(playlistId = '37i9dQZF1DXcBWIGoYBM5M') {
+export async function getChartPlaylistTracks(playlistId = '37i9dQZF1DXcBWIGoYBM5M') {
     try {
         const res = await fetch(`https://open.spotify.com/embed/playlist/${playlistId}`, {
             headers: {
@@ -408,7 +408,7 @@ export async function getSpotifyPlaylistTracks(playlistId = '37i9dQZF1DXcBWIGoYB
         const entity = data.props?.pageProps?.state?.data?.entity;
         if (!entity || !entity.trackList) return [];
 
-        const playlistName = entity.name || 'Spotify Top Hits';
+        const playlistName = entity.name || 'Chart Top Hits';
 
         return entity.trackList.map((t, index) => {
             const trackId = (t.uri || '').replace('spotify:track:', '') || `sp_${index}`;
@@ -419,7 +419,7 @@ export async function getSpotifyPlaylistTracks(playlistId = '37i9dQZF1DXcBWIGoYB
                 id: `sp_${trackId}`,
                 source: 'spotify',
                 title: t.title || 'Unknown Title',
-                artist: t.subtitle || 'Spotify Artist',
+                artist: t.subtitle || 'Chart Artist',
                 album: playlistName,
                 duration: `${mins}:${secs}`,
                 durationSeconds: durationSec,
@@ -427,11 +427,11 @@ export async function getSpotifyPlaylistTracks(playlistId = '37i9dQZF1DXcBWIGoYB
                 previewUrl: t.audioPreview?.url || '',
                 permalinkUrl: `https://open.spotify.com/track/${trackId}`,
                 isFullTrack: true,
-                isSpotify: true,
+                isChart: true,
             };
         });
     } catch (e) {
-        console.warn('Spotify playlist error:', e.message);
+        console.warn('Chart playlist error:', e.message);
         return [];
     }
 }
@@ -448,7 +448,7 @@ app.all('/api/spotify-charts', async (req, res) => {
     };
     const plId = PLAYLISTS[chart] || chart;
     try {
-        const tracks = await getSpotifyPlaylistTracks(plId);
+        const tracks = await getChartPlaylistTracks(plId);
         return res.json({ tracks });
     } catch (err) {
         return res.status(500).json({ error: err.message });
@@ -472,7 +472,7 @@ app.post('/api/search-music', async (req, res) => {
             } else if (lower.includes('viral') || lower.includes('вирус')) {
                 chartId = '37i9dQZEVXbLiRSasKsNU9';
             }
-            const spotifyTracks = await getSpotifyPlaylistTracks(chartId);
+            const spotifyTracks = await getChartPlaylistTracks(chartId);
             if (spotifyTracks.length > 0) {
                 return res.json({
                     cleanQuery: userQuery,
@@ -606,9 +606,9 @@ export async function generateTasteAdaptiveWave({ seedTrack = {}, tasteProfile =
         }
     }
 
-    // 4. Добавление свежих открытий из Spotify
+    // 4. Добавление свежих открытий из Chart
     try {
-        const topChartTracks = await getSpotifyPlaylistTracks('37i9dQZEVXbMDoHDwVN2tF');
+        const topChartTracks = await getChartPlaylistTracks('37i9dQZEVXbMDoHDwVN2tF');
         const shuffledChart = topChartTracks.sort(() => 0.5 - Math.random());
         for (const t of shuffledChart.slice(0, 4)) {
             const sig = `${(t.artist || '').toLowerCase()}__${(t.title || '').toLowerCase()}`;
@@ -718,7 +718,7 @@ export async function fetchTrackLyrics(title = '', artist = '', duration = 0) {
             let getUrl = `https://lrclib.net/api/get?track_name=${encodeURIComponent(cleanTitle)}&artist_name=${encodeURIComponent(cleanArtist)}`;
             if (duration > 0) getUrl += `&duration=${Math.round(duration)}`;
             const res = await fetch(getUrl, {
-                headers: { 'User-Agent': 'DodoSpoti/1.1 (https://github.com/foridorpo-blip/DodoSpoti)' },
+                headers: { 'User-Agent': 'DodoMusic/1.1 (https://github.com/foridorpo-blip/DodoMusic)' },
                 signal: AbortSignal.timeout(6000)
             });
             if (res.ok) {
@@ -757,7 +757,7 @@ export async function fetchTrackLyrics(title = '', artist = '', duration = 0) {
         try {
             const searchUrl = `https://lrclib.net/api/search?q=${encodeURIComponent(q)}`;
             const res = await fetch(searchUrl, {
-                headers: { 'User-Agent': 'DodoSpoti/1.1 (https://github.com/foridorpo-blip/DodoSpoti)' },
+                headers: { 'User-Agent': 'DodoMusic/1.1 (https://github.com/foridorpo-blip/DodoMusic)' },
                 signal: AbortSignal.timeout(6000)
             });
             if (res.ok) {
@@ -998,11 +998,11 @@ app.all('/api/playlist-tracks', async (req, res) => {
 const CURRENT_APP_VERSION = 'v1.1';
 
 app.all('/api/check-update', async (req, res) => {
-    const repo = (req.body?.repo || req.query?.repo || 'foridorpo-blip/DodoSpoti').trim();
+    const repo = (req.body?.repo || req.query?.repo || 'foridorpo-blip/DodoMusic').trim();
     try {
         const ghRes = await fetch(`https://api.github.com/repos/${repo}/releases/latest`, {
             headers: {
-                'User-Agent': 'DodoSpoti-Desktop-v1.1',
+                'User-Agent': 'DodoMusic-Desktop-v1.1',
                 'Accept': 'application/vnd.github.v3+json',
             },
             signal: AbortSignal.timeout(5000),
@@ -1022,7 +1022,7 @@ app.all('/api/check-update', async (req, res) => {
                 const lMinor = parseInt(matchLatest[2], 10);
                 hasUpdate = (lMajor > 1) || (lMajor === 1 && lMinor > 1);
             } else {
-                hasUpdate = cleanTag !== 'v1.1' && cleanTag !== 'v1.0' && cleanTag !== 'dodospoti';
+                hasUpdate = cleanTag !== 'v1.1' && cleanTag !== 'v1.0' && cleanTag !== 'dodomusic';
             }
 
             return res.json({
@@ -1040,7 +1040,7 @@ app.all('/api/check-update', async (req, res) => {
         currentVersion: CURRENT_APP_VERSION,
         latestVersion: CURRENT_APP_VERSION,
         hasUpdate: false,
-        message: 'У вас установлена последняя версия DodoSpoti (v1.1).',
+        message: 'У вас установлена последняя версия DodoMusic (v1.1).',
         downloadUrl: `https://github.com/${repo}/releases`,
     });
 });
@@ -1049,7 +1049,7 @@ app.post('/api/system-notify', (req, res) => {
     return res.json({ ok: true, node: true });
 });
 
-const libraryPath = path.join(__dirname, 'dodospoti_library.json');
+const libraryPath = path.join(__dirname, 'dodomusic_library.json');
 
 app.get('/api/library', (req, res) => {
     try {

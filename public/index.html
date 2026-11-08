@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>DodoSpoti</title>
+    <title>DodoMusic</title>
     <link rel="icon" type="image/png" href="icon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,7 +18,7 @@
         <!-- Левая панель навигации -->
         <aside class="sidebar">
             <div class="brand">
-                <img src="icon.png" alt="DodoSpoti" class="brand-logo-img" draggable="false" />
+                <img src="icon.png" alt="DodoMusic" class="brand-logo-img" draggable="false" />
                 <div class="brand-text">
                     <span class="brand-title">Dodo<span class="brand-accent">Spoti</span></span>
                 </div>
@@ -68,7 +68,7 @@
 
             <div class="sidebar-version-badge">
                 <span class="version-dot"></span>
-                <span>DodoSpoti v1.3</span>
+                <span>DodoMusic v1.3</span>
             </div>
         </aside>
 
@@ -100,7 +100,7 @@
                 </form>
 
                 <div class="topbar-actions">
-                    <button id="updateBadgeBtn" class="topbar-update-btn" title="Проверить обновления DodoSpoti">
+                    <button id="updateBadgeBtn" class="topbar-update-btn" title="Проверить обновления DodoMusic">
                         <span class="update-dot"></span>
                         <span class="update-ver">v1.3</span>
                         <span id="updateBadgeLabel" class="update-badge-label" data-i18n="update_badge_ok">Актуально</span>
@@ -111,13 +111,13 @@
             <!-- ВКЛАДКА 1: ГЛАВНАЯ И КАТАЛОГ -->
             <section id="tab-discover" class="tab-panel active">
                 <div class="mood-cards-row">
-                    <div class="mood-card spotify-card" data-chart="spotify:top">
+                    <div class="mood-card spotify-card" data-chart="chart:top">
                         <span class="mood-tag" style="background:#1ed760; color:#000;">SPOTIFY</span>
-                        <div class="mood-title" data-i18n="spotify_top_hits">🟢 Топ Spotify Hits</div>
+                        <div class="mood-title" data-i18n="spotify_top_hits">🟢 Мировой ТОП хитов</div>
                     </div>
-                    <div class="mood-card spotify-card" data-chart="spotify:russia">
+                    <div class="mood-card spotify-card" data-chart="chart:russia">
                         <span class="mood-tag" style="background:#1ed760; color:#000;">SPOTIFY</span>
-                        <div class="mood-title" data-i18n="spotify_russia_hits">🔥 Spotify Хит-парад</div>
+                        <div class="mood-title" data-i18n="spotify_russia_hits">🔥 Главный хит-парад</div>
                     </div>
                     <div class="mood-card" data-chart="KME Джентльмены">
                         <span class="mood-tag" data-i18n="tag_hit_day">ХИТ ДНЯ</span>
@@ -192,7 +192,7 @@
                         <!-- БЫСТРЫЕ ЖАНРЫ / НАСТРОЕНИЯ ВОЛНЫ -->
                         <div class="wave-chips-row">
                             <span class="wave-chips-label" data-i18n="wave_chips_label">Жанры волны:</span>
-                            <button class="wave-chip-btn" data-seed="Spotify Топ Хиты">🔥 Spotify Топ</button>
+                            <button class="wave-chip-btn" data-seed="Chart Топ Хиты">🔥 Chart Топ</button>
                             <button class="wave-chip-btn" data-seed="Фонк Drift Phonk">🏎️ Фонк</button>
                             <button class="wave-chip-btn" data-seed="Русский Рэп Хип-Хоп">🎧 Рэп & Хип-Хоп</button>
                             <button class="wave-chip-btn" data-seed="Chill Lo-Fi beats">☕ Chill & Lo-Fi</button>
@@ -307,7 +307,7 @@
             <section id="tab-settings" class="tab-panel">
                 <div class="section-title-row">
                     <h2 data-i18n="settings_heading">Настройки и Видео-обои</h2>
-                    <span class="results-subtitle" data-i18n="settings_sub">Персонализация DodoSpoti</span>
+                    <span class="results-subtitle" data-i18n="settings_sub">Персонализация DodoMusic</span>
                 </div>
 
                 <div class="settings-container">
@@ -411,7 +411,7 @@
                         <p class="settings-hint" data-i18n="settings_legal_hint">Защита товарных знаков, политика приватности и отказ от ответственности</p>
                         <div class="legal-notice-box">
                             <p class="legal-summary" data-i18n="legal_summary">
-                                <b>DodoSpoti</b> — полностью независимый проект с открытым исходным кодом. Не аффилирован и не связан со Spotify AB или Dodo Brands.
+                                <b>DodoMusic</b> — полностью независимый проект с открытым исходным кодом. Не аффилирован и не связан со Third-Party Services или Dodo Brands.
                                 Ваши данные хранятся на 100% локально на вашем ПК (Zero Telemetry).
                             </p>
                             <div class="legal-actions-row">
@@ -429,7 +429,7 @@
 
                     <!-- Блок обновлений на GitHub -->
                     <div class="settings-group">
-                        <h3 data-i18n="settings_updates">Обновления DodoSpoti</h3>
+                        <h3 data-i18n="settings_updates">Обновления DodoMusic</h3>
                         <p class="settings-hint" data-i18n="settings_updates_hint">Проверка новых версий и релизов на GitHub</p>
                         <div class="update-card-box">
                             <div class="update-info-block">
@@ -438,7 +438,7 @@
                                     <span id="updateStatusText" class="update-status-badge ok" data-i18n="update_status_ok">Актуальная версия</span>
                                 </div>
                                 <p id="updateNotesText" class="update-desc" data-i18n="update_notes">
-                                    DodoSpoti v1.3 — Автономное Android-приложение, плавный мобильный интерфейс без лагов, точный поиск и резервный стриминг.
+                                    DodoMusic v1.3 — Автономное Android-приложение, плавный мобильный интерфейс без лагов, точный поиск и резервный стриминг.
                                 </p>
                             </div>
                             <div class="update-actions-row">
@@ -449,7 +449,7 @@
                                     </svg>
                                     <span data-i18n="check_updates_btn">Проверить обновления</span>
                                 </button>
-                                <a id="githubRepoLink" href="https://github.com/foridorpo-blip/DodoSpoti/releases" target="_blank" class="secondary-btn">
+                                <a id="githubRepoLink" href="https://github.com/foridorpo-blip/DodoMusic/releases" target="_blank" class="secondary-btn">
                                     <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
                                         <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
                                     </svg>
@@ -475,7 +475,7 @@
             />
             <div class="player-meta">
                 <div id="playerTitle" class="player-title" data-i18n="player_select_track">Выберите песню</div>
-                <div id="playerArtist" class="player-artist">DodoSpoti</div>
+                <div id="playerArtist" class="player-artist">DodoMusic</div>
             </div>
             <button id="likeCurrentBtn" class="icon-btn" title="В любимые">
                 <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" id="likeSvg">
@@ -568,10 +568,10 @@
     <div id="systemToast" class="system-toast">
         <div class="toast-glow"></div>
         <div class="toast-icon-wrap" id="toastIconWrap">
-            <img src="icon.png" class="toast-brand-avatar" alt="DodoSpoti" draggable="false" />
+            <img src="icon.png" class="toast-brand-avatar" alt="DodoMusic" draggable="false" />
         </div>
         <div class="toast-content">
-            <div id="toastTitle" class="toast-title">DodoSpoti v1.3</div>
+            <div id="toastTitle" class="toast-title">DodoMusic v1.3</div>
             <div id="toastBody" class="toast-body">У вас установлена последняя версия!</div>
         </div>
         <button id="toastCloseBtn" class="toast-close-btn" title="Закрыть">✕</button>

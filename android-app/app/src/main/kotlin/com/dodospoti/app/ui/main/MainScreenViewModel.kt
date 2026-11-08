@@ -1,9 +1,9 @@
-package com.dodospoti.app.ui.main
+package com.dodomusic.app.ui.main
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.dodospoti.app.data.DataRepository
-import com.dodospoti.app.ui.main.MainScreenUiState.Success
+import com.dodomusic.app.data.DataRepository
+import com.dodomusic.app.ui.main.MainScreenUiState.Success
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch

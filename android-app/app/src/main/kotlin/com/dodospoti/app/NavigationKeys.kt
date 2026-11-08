@@ -1,4 +1,4 @@
-package com.dodospoti.app
+package com.dodomusic.app
 
 import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable

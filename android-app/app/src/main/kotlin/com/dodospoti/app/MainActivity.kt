@@ -1,4 +1,4 @@
-package com.dodospoti.app
+package com.dodomusic.app
 
 import android.annotation.SuppressLint
 import android.app.Notification
@@ -46,7 +46,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.app.NotificationCompat
 import androidx.media.app.NotificationCompat.MediaStyle
 import androidx.webkit.WebViewAssetLoader
-import com.dodospoti.app.ui.theme.DodoSpotiTheme
+import com.dodomusic.app.ui.theme.DodoMusicTheme
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.zip.GZIPInputStream
@@ -54,12 +54,12 @@ import java.util.zip.GZIPInputStream
 class MainActivity : ComponentActivity() {
 
     companion object {
-        const val CHANNEL_ID = "dodospoti_playback_channel"
+        const val CHANNEL_ID = "dodomusic_playback_channel"
         const val NOTIFICATION_ID = 1001
-        const val ACTION_PREV = "com.dodospoti.app.ACTION_PREV"
-        const val ACTION_PLAY_PAUSE = "com.dodospoti.app.ACTION_PLAY_PAUSE"
-        const val ACTION_NEXT = "com.dodospoti.app.ACTION_NEXT"
-        const val ACTION_STOP = "com.dodospoti.app.ACTION_STOP"
+        const val ACTION_PREV = "com.dodomusic.app.ACTION_PREV"
+        const val ACTION_PLAY_PAUSE = "com.dodomusic.app.ACTION_PLAY_PAUSE"
+        const val ACTION_NEXT = "com.dodomusic.app.ACTION_NEXT"
+        const val ACTION_STOP = "com.dodomusic.app.ACTION_STOP"
     }
 
     private var dodoWebView: WebView? = null
@@ -136,14 +136,14 @@ class MainActivity : ComponentActivity() {
         })
 
         setContent {
-            DodoSpotiTheme {
+            DodoMusicTheme {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(androidx.compose.ui.graphics.Color(0xFF06070B))
                         .systemBarsPadding()
                 ) {
-                    DodoSpotiPlayerScreen(
+                    DodoMusicPlayerScreen(
                         activity = this@MainActivity,
                         onWebViewCreated = { webView ->
                             dodoWebView = webView
@@ -159,7 +159,7 @@ class MainActivity : ComponentActivity() {
             val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "DodoSpoti Воспроизведение",
+                "DodoMusic Воспроизведение",
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
                 description = "Управление воспроизведением музыки на экране блокировки"
@@ -173,7 +173,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun setupMediaSession() {
-        mediaSession = MediaSessionCompat(this, "DodoSpotiMediaSession").apply {
+        mediaSession = MediaSessionCompat(this, "DodoMusicMediaSession").apply {
             setCallback(object : MediaSessionCompat.Callback() {
                 override fun onPlay() {
                     dodoWebView?.post {
@@ -210,7 +210,7 @@ class MainActivity : ComponentActivity() {
         try {
             if (wakeLock == null) {
                 val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
-                wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "DodoSpoti:PlaybackWakeLock")
+                wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "DodoMusic:PlaybackWakeLock")
             }
             if (isPlaying) {
                 if (wakeLock?.isHeld != true) {
@@ -222,7 +222,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
         } catch (e: Exception) {
-            android.util.Log.w("DodoSpoti", "WakeLock error: ${e.message}")
+            android.util.Log.w("DodoMusic", "WakeLock error: ${e.message}")
         }
     }
 
@@ -427,7 +427,7 @@ class AndroidBridgeInterface(
             }
             ""
         } catch (e: Exception) {
-            android.util.Log.e("DodoSpoti", "fetchUrl error for $urlStr: ${e.message}")
+            android.util.Log.e("DodoMusic", "fetchUrl error for $urlStr: ${e.message}")
             ""
         }
     }
@@ -438,7 +438,7 @@ class AndroidBridgeInterface(
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-fun DodoSpotiPlayerScreen(
+fun DodoMusicPlayerScreen(
     activity: MainActivity,
     onWebViewCreated: (WebView) -> Unit
 ) {
@@ -480,7 +480,7 @@ fun DodoSpotiPlayerScreen(
                         loadWithOverviewMode = true
 
                         cacheMode = WebSettings.LOAD_DEFAULT
-                        userAgentString = "$userAgentString DodoSpotiAndroid/1.3"
+                        userAgentString = "$userAgentString DodoMusicAndroid/1.3"
                     }
 
                     addJavascriptInterface(AndroidBridgeInterface(activity), "AndroidBridge")
@@ -488,7 +488,7 @@ fun DodoSpotiPlayerScreen(
                     webChromeClient = object : WebChromeClient() {
                         override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
                             android.util.Log.d(
-                                "DodoSpoti",
+                                "DodoMusic",
                                 "[JS] ${consoleMessage?.message()} (${consoleMessage?.lineNumber()})"
                             )
                             return true
@@ -510,7 +510,7 @@ fun DodoSpotiPlayerScreen(
                             error: WebResourceError?
                         ) {
                             super.onReceivedError(view, request, error)
-                            android.util.Log.e("DodoSpoti", "WebView Error: ${error?.description}")
+                            android.util.Log.e("DodoMusic", "WebView Error: ${error?.description}")
                         }
                     }
 

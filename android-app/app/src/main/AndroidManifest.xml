@@ -17,7 +17,7 @@
         android:usesCleartextTraffic="true"
         android:hardwareAccelerated="true"
         android:windowSoftInputMode="adjustResize"
-        android:theme="@style/Theme.DodoSpoti">
+        android:theme="@style/Theme.DodoMusic">
         <activity
             android:name=".MainActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"

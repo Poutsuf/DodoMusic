@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.dodospoti.app.ui.theme
+package com.dodomusic.app.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

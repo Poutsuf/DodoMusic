@@ -1,4 +1,4 @@
-package com.dodospoti.app.ui.main
+package com.dodomusic.app.ui.main
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,9 +23,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.NavKey
-import com.dodospoti.app.R
-import com.dodospoti.app.data.DefaultDataRepository
-import com.dodospoti.app.ui.theme.DodoSpotiTheme
+import com.dodomusic.app.R
+import com.dodomusic.app.data.DefaultDataRepository
+import com.dodomusic.app.ui.theme.DodoMusicTheme
 
 @Composable
 fun MainScreen(
@@ -100,6 +100,6 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun MainScreenPreview() {
-  DodoSpotiTheme { MainScreen(listOf("Android")) }
+  DodoMusicTheme { MainScreen(listOf("Android")) }
 }
 

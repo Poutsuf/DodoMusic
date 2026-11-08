@@ -1,7 +1,7 @@
 // Режим работы: десктопное приложение с локальным сервером или автономный клиент (Android / file://)
 const isStandaloneApp = window.location.protocol === 'file:' || 
                         window.location.hostname === 'appassets.androidplatform.net' || 
-                        navigator.userAgent.includes('DodoSpotiAndroid');
+                        navigator.userAgent.includes('DodoMusicAndroid');
 
 // Нативный HTML5 Audio + HLS.js + Web Audio API анализатор баса
 const audioPlayer = new Audio();
@@ -91,7 +91,7 @@ const defaultSettings = {
 
 let userSettings = {
     ...defaultSettings,
-    ...JSON.parse(localStorage.getItem('dodospoti_settings') || '{}'),
+    ...JSON.parse(localStorage.getItem('dodomusic_settings') || '{}'),
 };
 
 // ==========================================
@@ -112,8 +112,8 @@ const I18N = {
         clear_history_btn: 'Очистить всё',
         taste_dna_title: 'ДНК Вашего Вкуса (Анализ предпочтений)',
         update_badge_ok: 'Актуально',
-        spotify_top_hits: '🟢 Топ Spotify Hits',
-        spotify_russia_hits: '🔥 Spotify Хит-парад',
+        spotify_top_hits: '🟢 Мировой ТОП хитов',
+        spotify_russia_hits: '🔥 Главный хит-парад',
         tag_hit_day: 'ХИТ ДНЯ',
         tag_top_hits: 'ТОП ХИТЫ',
         tag_trends: 'ТРЕНДЫ',
@@ -143,7 +143,7 @@ const I18N = {
         hist_heading: 'Недавно прослушано',
         hist_subtitle: 'История воспроизведения',
         settings_heading: 'Настройки и Видео-обои',
-        settings_sub: 'Персонализация DodoSpoti',
+        settings_sub: 'Персонализация DodoMusic',
         settings_wallpapers: 'Анимированные видео-обои',
         settings_wallpapers_hint: 'Выберите живую видео-сцену для фона приложения',
         wp_aurora: 'Северное Сияние',
@@ -166,14 +166,14 @@ const I18N = {
         settings_lang_hint: 'Выберите основной язык приложения',
         settings_legal: 'Правовая информация и конфиденциальность',
         settings_legal_hint: 'Защита товарных знаков, политика приватности и отказ от ответственности',
-        legal_summary: '<b>DodoSpoti</b> — полностью независимый проект с открытым исходным кодом. Не аффилирован и не связан со Spotify AB или Dodo Brands. Ваши данные хранятся на 100% локально на вашем ПК (Zero Telemetry).',
+        legal_summary: '<b>DodoMusic</b> — полностью независимый проект с открытым исходным кодом. Не аффилирован и не связан со Third-Party Services или Dodo Brands. Ваши данные хранятся на 100% локально на вашем ПК (Zero Telemetry).',
         open_privacy_btn: 'Политика конфиденциальности',
         open_disclaimer_btn: 'Товарные знаки и Disclaimer',
-        settings_updates: 'Обновления DodoSpoti',
+        settings_updates: 'Обновления DodoMusic',
         settings_updates_hint: 'Проверка новых версий и релизов на GitHub',
         version_chip: 'Версия v1.1',
         update_status_ok: 'Актуальная версия',
-        update_notes: 'DodoSpoti v1.1 — Постоянное сохранение библиотеки и лайков на диск, скачивание MP3, системные уведомления Windows и медиа-клавиши.',
+        update_notes: 'DodoMusic v1.1 — Постоянное сохранение библиотеки и лайков на диск, скачивание MP3, системные уведомления Windows и медиа-клавиши.',
         check_updates_btn: 'Проверить обновления',
         github_releases_btn: 'Релизы на GitHub',
         player_select_track: 'Выберите песню',
@@ -206,8 +206,8 @@ const I18N = {
         clear_history_btn: 'Clear All',
         taste_dna_title: 'Taste DNA (Preference Analysis)',
         update_badge_ok: 'Up to date',
-        spotify_top_hits: '🟢 Top Spotify Hits',
-        spotify_russia_hits: '🔥 Spotify Hit Parade',
+        spotify_top_hits: '🟢 Top Chart Hits',
+        spotify_russia_hits: '🔥 Chart Hit Parade',
         tag_hit_day: 'HIT OF THE DAY',
         tag_top_hits: 'TOP HITS',
         tag_trends: 'TRENDING',
@@ -217,7 +217,7 @@ const I18N = {
         smart_wave_active: 'Smart Wave active • Mixing similar tracks',
         wave_pill: 'Infinite Wave • Smart Random',
         wave_title: 'My Wave: Smart Song Flow',
-        wave_desc: 'Select any track or genre, or use the search bar below, and DodoSpoti will automatically synthesize an infinite stream of matching artists, rhythms and melodies without interruptions.',
+        wave_desc: 'Select any track or genre, or use the search bar below, and DodoMusic will automatically synthesize an infinite stream of matching artists, rhythms and melodies without interruptions.',
         wave_search_start_btn: 'Search & Launch Wave',
         wave_chips_label: 'Wave Genres:',
         start_wave_btn: 'Start Wave',
@@ -237,7 +237,7 @@ const I18N = {
         hist_heading: 'Recently Played',
         hist_subtitle: 'Listening history',
         settings_heading: 'Settings & Live Wallpapers',
-        settings_sub: 'Customize your DodoSpoti experience',
+        settings_sub: 'Customize your DodoMusic experience',
         settings_wallpapers: 'Animated Live Wallpapers',
         settings_wallpapers_hint: 'Select dynamic video background for the application',
         wp_aurora: 'Northern Lights',
@@ -260,14 +260,14 @@ const I18N = {
         settings_lang_hint: 'Select the primary application language',
         settings_legal: 'Legal Information & Privacy Policy',
         settings_legal_hint: 'Trademark protection, disclaimer and privacy notices',
-        legal_summary: '<b>DodoSpoti</b> is a fully independent open-source desktop client. It is NOT affiliated with, sponsored by, or endorsed by Spotify AB or Dodo Brands. All user data is stored 100% locally on your computer (Zero Telemetry).',
+        legal_summary: '<b>DodoMusic</b> is a fully independent open-source desktop client. It is NOT affiliated with, sponsored by, or endorsed by Third-Party Services or Dodo Brands. All user data is stored 100% locally on your computer (Zero Telemetry).',
         open_privacy_btn: 'Privacy Policy',
         open_disclaimer_btn: 'Trademarks & Disclaimer',
-        settings_updates: 'DodoSpoti Updates',
+        settings_updates: 'DodoMusic Updates',
         settings_updates_hint: 'Check GitHub releases for new updates',
         version_chip: 'Version v1.1',
         update_status_ok: 'Up to date',
-        update_notes: 'DodoSpoti v1.1 — Persistent local library on disk, MP3 downloads, Windows system notifications and media keys.',
+        update_notes: 'DodoMusic v1.1 — Persistent local library on disk, MP3 downloads, Windows system notifications and media keys.',
         check_updates_btn: 'Check for Updates',
         github_releases_btn: 'GitHub Releases',
         player_select_track: 'Select a track',
@@ -291,50 +291,50 @@ const I18N = {
 const LEGAL_DOCS = {
     ru: {
         privacy: `
-            <h3>Политика конфиденциальности DodoSpoti</h3>
+            <h3>Политика конфиденциальности DodoMusic</h3>
             <p style="color:var(--text-secondary); font-size:12px; margin-bottom:14px;">Редакция от 8 ноября 2026 г. • Zero Telemetry Standard</p>
             <h4>1. Принцип нулевой телеметрии (Zero Telemetry)</h4>
-            <p>DodoSpoti не собирает, не профилирует, не анализирует и не передает на какие-либо удаленные серверы ваши личные данные, IP-адреса, историю запросов или диагностическую телеметрию.</p>
+            <p>DodoMusic не собирает, не профилирует, не анализирует и не передает на какие-либо удаленные серверы ваши личные данные, IP-адреса, историю запросов или диагностическую телеметрию.</p>
             <h4>2. 100% локальное хранение данных</h4>
-            <p>Вся ваша медиатека, история прослушиваний, плейлисты и отметки «Мне нравится» хранятся <b>исключительно локально</b> в файле <code>dodospoti_library.json</code> в папке вашего профиля Windows (<code>%APPDATA%\\DodoSpoti</code>). Вы имеете полный суверенный контроль над своими данными.</p>
+            <p>Вся ваша медиатека, история прослушиваний, плейлисты и отметки «Мне нравится» хранятся <b>исключительно локально</b> в файле <code>dodomusic_library.json</code> в папке вашего профиля Windows (<code>%APPDATA%\\DodoMusic</code>). Вы имеете полный суверенный контроль над своими данными.</p>
             <h4>3. Воспроизведение и проксирование</h4>
             <p>Приложение воспроизводит аудиопотоки напрямую из открытых публичных веб-источников (SoundCloud, Audius, публичные превью) через локальный встроенный прокси-сервер на вашем ПК. Никакие рекламные трекеры, cookie или персональные идентификаторы не используются.</p>
         `,
         disclaimer: `
             <h3>Товарные знаки и отказ от ответственности</h3>
             <p style="color:var(--text-secondary); font-size:12px; margin-bottom:14px;">Уведомление о правовом статусе и защите интеллектуальной собственности</p>
-            <h4>1. Полная независимость от Spotify AB и Dodo Brands</h4>
-            <p><b>DodoSpoti</b> является независимым проектом с открытым исходным кодом (Open Source), созданным исключительно в исследовательских и образовательных целях.</p>
-            <p>Проект <b>НЕ ЯВЛЯЕТСЯ</b> официальным продуктом, не аффилирован, не спонсируется, не одобряется и никак не связан с корпорацией <b>Spotify AB</b>, сервисом Spotify или компанией <b>Dodo Brands</b>.</p>
+            <h4>1. Полная независимость от Third-Party Services и Dodo Brands</h4>
+            <p><b>DodoMusic</b> является независимым проектом с открытым исходным кодом (Open Source), созданным исключительно в исследовательских и образовательных целях.</p>
+            <p>Проект <b>НЕ ЯВЛЯЕТСЯ</b> официальным продуктом, не аффилирован, не спонсируется, не одобряется и никак не связан с корпорацией <b>Third-Party Services</b>, сервисом Chart или компанией <b>Dodo Brands</b>.</p>
             <h4>2. Товарные знаки и добросовестное использование (Nominative Fair Use)</h4>
-            <p>«Spotify», логотипы Spotify и фирменный визуальный стиль являются зарегистрированными товарными знаками компании <b>Spotify AB</b>. Название «Dodo» и связанный бренд являются собственностью <b>Dodo Brands</b>.</p>
-            <p>Название «DodoSpoti» является оригинальным фантазийным наименованием (отсылка к редкой птице Додо как символу уникальности и звуковым точкам воспроизведения «spots»). Любые упоминания сторонних брендов в интерфейсе носят строго описательный характер (Nominative Fair Use) для информирования пользователя об открытых источниках каталогов.</p>
+            <p>«Chart», логотипы Chart и фирменный визуальный стиль являются зарегистрированными товарными знаками компании <b>Third-Party Services</b>. Название «Dodo» и связанный бренд являются собственностью <b>Dodo Brands</b>.</p>
+            <p>Название «DodoMusic» является оригинальным фантазийным наименованием (отсылка к редкой птице Додо как символу уникальности и звуковым точкам воспроизведения «spots»). Любые упоминания сторонних брендов в интерфейсе носят строго описательный характер (Nominative Fair Use) для информирования пользователя об открытых источниках каталогов.</p>
             <h4>3. DMCA и связь с автором</h4>
-            <p>DodoSpoti не осуществляет хостинг и хранение защищённых аудиофайлов на внешних серверах. Все аудиопотоки доставляются через публичные легальные API. Контакт для правообладателей: <b>foridorpo@gmail.com</b>.</p>
+            <p>DodoMusic не осуществляет хостинг и хранение защищённых аудиофайлов на внешних серверах. Все аудиопотоки доставляются через публичные легальные API. Контакт для правообладателей: <b>foridorpo@gmail.com</b>.</p>
         `
     },
     en: {
         privacy: `
-            <h3>DodoSpoti Privacy Policy</h3>
+            <h3>DodoMusic Privacy Policy</h3>
             <p style="color:var(--text-secondary); font-size:12px; margin-bottom:14px;">Effective Date: November 8, 2026 • Zero Telemetry Standard</p>
             <h4>1. Zero Telemetry Principle</h4>
-            <p>DodoSpoti is engineered around strict privacy standards. The application does not collect, track, profile, log, or transmit any user behavior, IP addresses, search queries, or telemetry data to any external servers.</p>
+            <p>DodoMusic is engineered around strict privacy standards. The application does not collect, track, profile, log, or transmit any user behavior, IP addresses, search queries, or telemetry data to any external servers.</p>
             <h4>2. 100% Local-First Storage</h4>
-            <p>All your favorite tracks, playback history, preferences, and queue data are stored <b>100% locally</b> in <code>dodospoti_library.json</code> within your Windows user profile (<code>%APPDATA%\\DodoSpoti</code>). You retain absolute control of your files.</p>
+            <p>All your favorite tracks, playback history, preferences, and queue data are stored <b>100% locally</b> in <code>dodomusic_library.json</code> within your Windows user profile (<code>%APPDATA%\\DodoMusic</code>). You retain absolute control of your files.</p>
             <h4>3. Streaming & Local Proxying</h4>
             <p>Audio playback is performed by querying public streaming endpoints (SoundCloud, Audius, public previews) via a local loopback server on your machine. No third-party tracking cookies or advertising SDKs are present.</p>
         `,
         disclaimer: `
             <h3>Trademarks & Legal Disclaimer</h3>
             <p style="color:var(--text-secondary); font-size:12px; margin-bottom:14px;">Notice of Non-Affiliation and Intellectual Property Rights</p>
-            <h4>1. Non-Affiliation with Spotify AB or Dodo Brands</h4>
-            <p><b>DodoSpoti</b> is an independent, non-commercial, open-source desktop client created for educational and personal entertainment purposes.</p>
-            <p>DodoSpoti is <b>NOT affiliated with, sponsored by, authorized by, endorsed by, or in any way officially connected with Spotify AB</b>, Spotify, or Dodo Brands.</p>
+            <h4>1. Non-Affiliation with Third-Party Services or Dodo Brands</h4>
+            <p><b>DodoMusic</b> is an independent, non-commercial, open-source desktop client created for educational and personal entertainment purposes.</p>
+            <p>DodoMusic is <b>NOT affiliated with, sponsored by, authorized by, endorsed by, or in any way officially connected with Third-Party Services</b>, Chart, or Dodo Brands.</p>
             <h4>2. Trademark Notice & Nominative Fair Use</h4>
-            <p>The name "Spotify", the Spotify logo, and related trademarks are registered trademarks of <b>Spotify AB</b>. The name "Dodo" and related trademarks are properties of <b>Dodo Brands</b>.</p>
-            <p>The project name "DodoSpoti" is an independent creation (joining the extinct Dodo bird as an emblem of individuality and "spot" referencing acoustic cue points). References to third-party services are made strictly for identification purposes under Nominative Fair Use.</p>
+            <p>The name "Chart", the Chart logo, and related trademarks are registered trademarks of <b>Third-Party Services</b>. The name "Dodo" and related trademarks are properties of <b>Dodo Brands</b>.</p>
+            <p>The project name "DodoMusic" is an independent creation (joining the extinct Dodo bird as an emblem of individuality and "spot" referencing acoustic cue points). References to third-party services are made strictly for identification purposes under Nominative Fair Use.</p>
             <h4>3. Copyright & DMCA Inquiries</h4>
-            <p>DodoSpoti does not host, distribute, or store copyrighted music files. Media streams originate from publicly accessible provider APIs. For intellectual property inquiries: <b>foridorpo@gmail.com</b>.</p>
+            <p>DodoMusic does not host, distribute, or store copyrighted music files. Media streams originate from publicly accessible provider APIs. For intellectual property inquiries: <b>foridorpo@gmail.com</b>.</p>
         `
     }
 };
@@ -360,11 +360,11 @@ function applyLanguage(lang) {
         btn.classList.toggle('active', btn.dataset.lang === lang);
     });
 
-    document.title = `DodoSpoti - ${lang === 'ru' ? 'Свободная музыка' : 'Free Music Player'}`;
+    document.title = `DodoMusic - ${lang === 'ru' ? 'Свободная музыка' : 'Free Music Player'}`;
 }
 
-let favorites = JSON.parse(localStorage.getItem('dodospoti_favorites') || '[]');
-let historyList = JSON.parse(localStorage.getItem('dodospoti_history') || '[]');
+let favorites = JSON.parse(localStorage.getItem('dodomusic_favorites') || '[]');
+let historyList = JSON.parse(localStorage.getItem('dodomusic_history') || '[]');
 
 // DOM элементы
 const searchForm = document.getElementById('searchForm');
@@ -461,7 +461,7 @@ function syncPlayPauseUI() {
     if (window.AndroidBridge && typeof window.AndroidBridge.updateMediaNotification === 'function') {
         if (activeTrack) {
             window.AndroidBridge.updateMediaNotification(
-                activeTrack.title || 'DodoSpoti',
+                activeTrack.title || 'DodoMusic',
                 activeTrack.artist || 'Свободная музыка',
                 activeTrack.thumbnail || '',
                 Boolean(isPlaying)
@@ -528,7 +528,7 @@ function formatTime(sec) {
 // ==========================================
 function getSearchHistory() {
     try {
-        const raw = localStorage.getItem('dodospoti_search_history');
+        const raw = localStorage.getItem('dodomusic_search_history');
         return raw ? JSON.parse(raw) : [];
     } catch (_) {
         return [];
@@ -543,7 +543,7 @@ function saveSearchHistoryQuery(query) {
     list.unshift(q);
     if (list.length > 12) list = list.slice(0, 12);
     try {
-        localStorage.setItem('dodospoti_search_history', JSON.stringify(list));
+        localStorage.setItem('dodomusic_search_history', JSON.stringify(list));
     } catch (_) {}
 }
 
@@ -551,13 +551,13 @@ function deleteSearchHistoryQuery(query) {
     let list = getSearchHistory();
     list = list.filter(item => item.toLowerCase() !== (query || '').toLowerCase());
     try {
-        localStorage.setItem('dodospoti_search_history', JSON.stringify(list));
+        localStorage.setItem('dodomusic_search_history', JSON.stringify(list));
     } catch (_) {}
 }
 
 function clearAllSearchHistory() {
     try {
-        localStorage.removeItem('dodospoti_search_history');
+        localStorage.removeItem('dodomusic_search_history');
     } catch (_) {}
 }
 
@@ -668,7 +668,7 @@ function getUserTasteProfile() {
 
     let disliked = [];
     try {
-        disliked = JSON.parse(localStorage.getItem('dodospoti_disliked_ids') || '[]');
+        disliked = JSON.parse(localStorage.getItem('dodomusic_disliked_ids') || '[]');
     } catch (_) {}
 
     return {
@@ -963,7 +963,7 @@ async function searchSoundCloudDirectly(query) {
 async function searchAudiusDirectly(query) {
     if (!query || !query.trim()) return [];
     try {
-        const url = 'https://discoveryprovider.audius.co/v1/tracks/search?query=' + encodeURIComponent(query.trim()) + '&app_name=DODOSPOTI';
+        const url = 'https://discoveryprovider.audius.co/v1/tracks/search?query=' + encodeURIComponent(query.trim()) + '&app_name=DODOMUSIC';
         const data = await networkFetchJson(url, 6000);
         const items = data?.data || [];
         return items
@@ -976,7 +976,7 @@ async function searchAudiusDirectly(query) {
                 artist: t.user?.name || 'Неизвестный исполнитель',
                 duration: Math.round(t.duration || 0),
                 thumbnail: t.artwork ? (t.artwork['480x480'] || t.artwork['150x150'] || 'icon.png') : 'icon.png',
-                streamUrl: 'https://discoveryprovider.audius.co/v1/tracks/' + t.id + '/stream?app_name=DODOSPOTI',
+                streamUrl: 'https://discoveryprovider.audius.co/v1/tracks/' + t.id + '/stream?app_name=DODOMUSIC',
                 protocol: 'progressive',
                 permalinkUrl: 'https://audius.co' + (t.permalink || ''),
                 genre: t.genre || '',
@@ -1091,8 +1091,8 @@ async function resolveStreamDirectly(track) {
 async function searchMusic(rawQuery) {
     if (!rawQuery?.trim()) return;
     let query = rawQuery.trim();
-    if (query === 'spotify:top') query = 'Miyagi Macan Дора';
-    if (query === 'spotify:russia') query = 'Русские хиты Miyagi';
+    if (query === 'chart:top') query = 'Miyagi Macan Дора';
+    if (query === 'chart:russia') query = 'Русские хиты Miyagi';
 
     saveSearchHistoryQuery(query);
     searchBtn.disabled = true;
@@ -1175,9 +1175,9 @@ function renderTracksGrid(container, list, options = {}) {
         const cleanTitle = decodeHtml(track.title);
         const cleanArtist = decodeHtml(track.artist);
         const durationText = track.duration || '';
-        const isSpotify = track.source === 'spotify' || track.isSpotify;
-        const platformBadge = isSpotify
-            ? '<span class="platform-pill-badge spotify" style="position:absolute; top:8px; left:8px; z-index:3; font-size:10px; padding:3px 7px; border-radius:6px; background:#1ed760; color:#000; font-weight:800; box-shadow:0 2px 8px rgba(30,215,96,0.5);">Spotify</span>'
+        const isChart = track.source === 'spotify' || track.isChart;
+        const platformBadge = isChart
+            ? '<span class="platform-pill-badge spotify" style="position:absolute; top:8px; left:8px; z-index:3; font-size:10px; padding:3px 7px; border-radius:6px; background:#1ed760; color:#000; font-weight:800; box-shadow:0 2px 8px rgba(30,215,96,0.5);">Chart</span>'
             : (track.source === 'audius' ? '<span class="platform-pill-badge audius" style="position:absolute; top:8px; left:8px; z-index:3; font-size:10px; padding:3px 7px; border-radius:6px; background:#cc33ff; color:#fff; font-weight:800;">Audius</span>' : '');
 
         const removeBtnHtml = options.isWaveView
@@ -1464,7 +1464,7 @@ async function playTrackAtIndex(index) {
             navigator.mediaSession.metadata = new MediaMetadata({
                 title: cleanTitle,
                 artist: cleanArtist,
-                album: 'DodoSpoti',
+                album: 'DodoMusic',
                 artwork: [
                     { src: track.thumbnail || 'icon.png', sizes: '512x512', type: 'image/png' },
                 ],
@@ -1476,7 +1476,7 @@ async function playTrackAtIndex(index) {
     if (window.AndroidBridge && typeof window.AndroidBridge.updateMediaNotification === 'function') {
         try {
             window.AndroidBridge.updateMediaNotification(
-                cleanTitle || 'DodoSpoti',
+                cleanTitle || 'DodoMusic',
                 cleanArtist || 'Свободная музыка',
                 track.thumbnail || '',
                 true
@@ -1502,7 +1502,7 @@ async function playTrackAtIndex(index) {
         const params = new URLSearchParams({
             id: track.id,
             trackId: track.id,
-            source: track.source || (track.isSpotify ? 'spotify' : 'soundcloud'),
+            source: track.source || (track.isChart ? 'spotify' : 'soundcloud'),
             transcodingUrl: track.transcodingUrl || '',
             streamUrl: track.streamUrl || '',
             previewUrl: track.previewUrl || track.audioPreview || '',
@@ -1637,8 +1637,8 @@ function updateAllCardsLikeUI() {
 
 function saveLibraryToDisk() {
     try {
-        localStorage.setItem('dodospoti_favorites', JSON.stringify(favorites));
-        localStorage.setItem('dodospoti_history', JSON.stringify(historyList));
+        localStorage.setItem('dodomusic_favorites', JSON.stringify(favorites));
+        localStorage.setItem('dodomusic_history', JSON.stringify(historyList));
     } catch (_) {}
 
     const badge = document.getElementById('favCountBadge');
@@ -1716,7 +1716,7 @@ if (downloadCurrentBtn) {
         showSystemNotification('Скачивание трека', `Загрузка «${decodeHtml(track.title)}»...`, 'music', track.thumbnail || 'icon.png');
         const params = new URLSearchParams({
             trackId: track.id,
-            source: track.source || (track.isSpotify ? 'spotify' : 'soundcloud'),
+            source: track.source || (track.isChart ? 'spotify' : 'soundcloud'),
             transcodingUrl: track.transcodingUrl || '',
             streamUrl: track.streamUrl || '',
             previewUrl: track.previewUrl || track.audioPreview || '',
@@ -2178,7 +2178,7 @@ function applySettingsToDOM() {
 
     applyLanguage(userSettings.language || 'ru');
 
-    localStorage.setItem('dodospoti_settings', JSON.stringify(userSettings));
+    localStorage.setItem('dodomusic_settings', JSON.stringify(userSettings));
     updateSliderFill(volumeBar);
     updateSliderFill(seekBar);
 }
@@ -2227,7 +2227,7 @@ document.querySelectorAll('.lang-btn').forEach((btn) => {
         const lang = btn.dataset.lang;
         userSettings.language = lang;
         applyLanguage(lang);
-        localStorage.setItem('dodospoti_settings', JSON.stringify(userSettings));
+        localStorage.setItem('dodomusic_settings', JSON.stringify(userSettings));
         syncLibraryToDisk();
     });
 });
@@ -2499,7 +2499,7 @@ function showSystemNotification(title, body, type = 'info', icon = 'icon.png') {
 
         if (toastIconWrap) {
             const iconSrc = icon || 'icon.png';
-            toastIconWrap.innerHTML = `<img src="${iconSrc}" class="toast-brand-avatar" alt="DodoSpoti" draggable="false" />`;
+            toastIconWrap.innerHTML = `<img src="${iconSrc}" class="toast-brand-avatar" alt="DodoMusic" draggable="false" />`;
         }
 
         if (toastTimer) clearTimeout(toastTimer);
@@ -2574,7 +2574,7 @@ async function checkAppUpdates(manual = false) {
             }
             if (manual) {
                 showSystemNotification(
-                    `Доступно обновление DodoSpoti ${data.latestVersion}`,
+                    `Доступно обновление DodoMusic ${data.latestVersion}`,
                     data.releaseNotes || 'Новая версия готова к установке с GitHub.',
                     'update'
                 );
@@ -2593,11 +2593,11 @@ async function checkAppUpdates(manual = false) {
                 updateStatusText.textContent = 'Установлена последняя версия v1.1';
             }
             if (updateNotesText) {
-                updateNotesText.textContent = 'DodoSpoti v1.1 — Постоянное сохранение библиотеки на диск, скачивание MP3, сердечки лайков на карточках и системная интеграция Windows.';
+                updateNotesText.textContent = 'DodoMusic v1.1 — Постоянное сохранение библиотеки на диск, скачивание MP3, сердечки лайков на карточках и системная интеграция Windows.';
             }
             if (manual) {
                 showSystemNotification(
-                    'DodoSpoti v1.1',
+                    'DodoMusic v1.1',
                     'У вас установлена самая актуальная версия! Обновлений не требуется.',
                     'success'
                 );
@@ -2896,7 +2896,7 @@ async function openLyricsForTrack(track) {
 
     if (lyricsTrackCover) lyricsTrackCover.src = track.thumbnail || 'icon.png';
     if (lyricsTrackTitle) lyricsTrackTitle.textContent = decodeHtml(track.title || 'Песня');
-    if (lyricsTrackArtist) lyricsTrackArtist.textContent = decodeHtml(track.artist || 'DodoSpoti');
+    if (lyricsTrackArtist) lyricsTrackArtist.textContent = decodeHtml(track.artist || 'DodoMusic');
     if (lyricsAmbientGlow) lyricsAmbientGlow.style.backgroundImage = `url('${track.thumbnail || 'icon.png'}')`;
 
     updateLyricsPlaySyncButtonState();
@@ -3163,7 +3163,7 @@ playerTrackInfo?.addEventListener('click', (e) => {
     if (current) {
         openLyricsForTrack(current);
     } else {
-        showSystemToast('DodoSpoti', 'Сначала включите трек для показа текста', 'info');
+        showSystemToast('DodoMusic', 'Сначала включите трек для показа текста', 'info');
     }
 });
 
@@ -3186,7 +3186,7 @@ lyricsBtn?.addEventListener('click', () => {
             openLyricsForTrack(current);
         }
     } else {
-        showSystemToast('DodoSpoti', 'Включите трек, чтобы смотреть караоке и текст', 'info');
+        showSystemToast('DodoMusic', 'Включите трек, чтобы смотреть караоке и текст', 'info');
     }
 });
 
@@ -3206,10 +3206,10 @@ window.addEventListener('keydown', (e) => {
     }
 });
 
-if (!localStorage.getItem('dodospoti_avatar_theme_v2')) {
+if (!localStorage.getItem('dodomusic_avatar_theme_v2')) {
     userSettings.wallpaper = 'aurora';
     userSettings.accentColor = '#1ed760';
-    localStorage.setItem('dodospoti_avatar_theme_v2', '1');
+    localStorage.setItem('dodomusic_avatar_theme_v2', '1');
 }
 
 applySettingsToDOM();

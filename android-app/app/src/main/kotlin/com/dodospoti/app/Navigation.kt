@@ -1,4 +1,4 @@
-package com.dodospoti.app
+package com.dodomusic.app
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
@@ -8,7 +8,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
-import com.dodospoti.app.ui.main.MainScreen
+import com.dodomusic.app.ui.main.MainScreen
 
 @Composable
 fun MainNavigation() {

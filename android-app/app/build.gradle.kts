@@ -5,10 +5,10 @@ plugins {
 }
 
 android {
-  namespace = "com.dodospoti.app"
+  namespace = "com.dodomusic.app"
   compileSdk = 36
   defaultConfig {
-    applicationId = "com.dodospoti.app"
+    applicationId = "com.dodomusic.app"
     minSdk = 26
     targetSdk = 35
     versionCode = 1

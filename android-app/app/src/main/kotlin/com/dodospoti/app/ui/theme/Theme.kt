@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.dodospoti.app.ui.theme
+package com.dodomusic.app.ui.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -41,7 +41,7 @@ private val LightColorScheme = lightColorScheme(
 )
 
 @Composable
-fun DodoSpotiTheme(
+fun DodoMusicTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = false,

@@ -1,4 +1,4 @@
-package com.dodospoti.app.data
+package com.dodomusic.app.data
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
