@@ -2364,10 +2364,35 @@ body {
    ANDROID & MOBILE OPTIMIZATIONS (<= 768px)
    ======================================================== */
 @media (max-width: 768px) {
+    #wallpaperCanvas {
+        display: none !important;
+    }
+
     body {
         overflow-x: hidden;
         user-select: none;
         -webkit-user-select: none;
+        background: #06070b !important;
+    }
+
+    /* Адаптивный поиск для Моей Волны */
+    .wave-search-container {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    .wave-search-container .wave-search-box {
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .wave-search-container #waveSearchBtn {
+        width: 100% !important;
+        justify-content: center !important;
+        height: 42px !important;
     }
 
     .app-layout {

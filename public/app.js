@@ -812,6 +812,19 @@ async function getLiveSoundCloudClientId() {
     return currentScClientId || BACKUP_SC_CLIENT_IDS[0];
 }
 
+function cleanTrackTitleAndArtist(rawTitle, rawUser) {
+    let title = (rawTitle || 'Без названия').replace(/\.(mp3|wav|flac)$/i, '').trim();
+    let artist = rawUser || 'Неизвестный исполнитель';
+
+    // Формат "Артист - Название" или "Артист — Название"
+    const match = title.match(/^(.+?)\s+[-—–]\s+(.+)$/);
+    if (match) {
+        artist = match[1].trim();
+        title = match[2].trim();
+    }
+    return { artist, title };
+}
+
 function mapSoundCloudTrack(t) {
     const transcodings = t.media?.transcodings || [];
     const prog = transcodings.find(x => x.format?.protocol === 'progressive');
@@ -820,12 +833,14 @@ function mapSoundCloudTrack(t) {
     const rawArtwork = t.artwork_url || t.user?.avatar_url || 'icon.png';
     const artwork = rawArtwork.replace('-large.', '-t500x500.');
 
+    const { artist, title } = cleanTrackTitleAndArtist(t.title, t.user?.username || t.user?.name);
+
     return {
         id: 'sc_' + t.id,
         trackId: t.id,
         source: 'soundcloud',
-        title: t.title || 'Без названия',
-        artist: t.user?.username || 'Неизвестный исполнитель',
+        title: title || 'Без названия',
+        artist: artist || 'Неизвестный исполнитель',
         duration: Math.round((t.duration || 0) / 1000),
         thumbnail: artwork,
         transcodingUrl: chosen ? chosen.url : null,
@@ -839,25 +854,66 @@ function mapSoundCloudTrack(t) {
 
 async function searchSoundCloudDirectly(query) {
     if (!query || !query.trim()) return [];
-    try {
-        const cid = await getLiveSoundCloudClientId();
-        const url = 'https://api-v2.soundcloud.com/search/tracks?q=' + encodeURIComponent(query.trim()) + '&client_id=' + cid + '&limit=25';
-        const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
-        if (!res.ok) {
-            if (res.status === 401) {
-                lastScClientIdFetch = 0;
+    const qLower = query.trim().toLowerCase();
+    const wantsRemix = qLower.includes('remix') || qLower.includes('ремикс');
+    const wantsSlowed = qLower.includes('slowed') || qLower.includes('bass');
+
+    const cids = [
+        currentScClientId,
+        '39AVoiZVrdvJEMFLH8T0c5WGshQaAPRJ',
+        'a3e059563d7fd3372b49b37f00a00bcf',
+        'iZIs9mchVcX5lhVR1EzGCcyTZpqbtsp4',
+        'b45b1aa10f1ac2941142580c10321315',
+        'fDoItMDFlkneyECshZRLYbuVaYM52x0J'
+    ].filter(Boolean);
+
+    for (const cid of cids) {
+        try {
+            const url = 'https://api-v2.soundcloud.com/search/tracks?q=' + encodeURIComponent(query.trim()) + '&client_id=' + cid + '&limit=30';
+            const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
+            if (!res.ok) {
+                if (res.status === 401 || res.status === 403) continue;
+                return [];
             }
-            return [];
-        }
-        const data = await res.json();
-        const items = data.collection || [];
-        return items
-            .filter(t => t.id && t.duration >= 30000 && t.duration <= 900000 && t.media?.transcodings?.length)
-            .map(mapSoundCloudTrack);
-    } catch (e) {
-        console.warn('[Direct SC Search] Warn:', e.message);
-        return [];
+            const data = await res.json();
+            const items = data.collection || [];
+            if (!items.length) continue;
+
+            const mapped = items
+                .filter(t => t.id && t.duration >= 40000 && t.duration <= 900000 && t.media?.transcodings?.length)
+                .map(mapSoundCloudTrack);
+
+            // Умная сортировка по релевантности запросу
+            mapped.sort((a, b) => {
+                const aFull = `${a.artist} ${a.title}`.toLowerCase();
+                const bFull = `${b.artist} ${b.title}`.toLowerCase();
+
+                let scoreA = 0;
+                let scoreB = 0;
+
+                if (a.title.toLowerCase().includes(qLower)) scoreA += 60;
+                if (b.title.toLowerCase().includes(qLower)) scoreB += 60;
+                if (a.artist.toLowerCase().includes(qLower)) scoreA += 40;
+                if (b.artist.toLowerCase().includes(qLower)) scoreB += 40;
+
+                // Точное совпадение начала названия
+                if (a.title.toLowerCase().startsWith(qLower)) scoreA += 30;
+                if (b.title.toLowerCase().startsWith(qLower)) scoreB += 30;
+
+                // Понижаем ремиксы и замедления, если они не запрашивались явно
+                if (!wantsRemix && (aFull.includes('remix') || aFull.includes('ремикс'))) scoreA -= 25;
+                if (!wantsRemix && (bFull.includes('remix') || bFull.includes('ремикс'))) scoreB -= 25;
+                if (!wantsSlowed && (aFull.includes('slowed') || aFull.includes('bass'))) scoreA -= 30;
+                if (!wantsSlowed && (bFull.includes('slowed') || bFull.includes('bass'))) scoreB -= 30;
+
+                return scoreB - scoreA;
+            });
+
+            currentScClientId = cid;
+            return mapped;
+        } catch (_) {}
     }
+    return [];
 }
 
 async function searchAudiusDirectly(query) {
@@ -892,13 +948,17 @@ async function searchAudiusDirectly(query) {
 }
 
 async function searchMusicDirectly(query) {
-    const [sc, aud] = await Promise.allSettled([
-        searchSoundCloudDirectly(query),
-        searchAudiusDirectly(query)
-    ]);
-    const scList = sc.status === 'fulfilled' ? sc.value : [];
-    const audList = aud.status === 'fulfilled' ? aud.value : [];
-    return scList.concat(audList);
+    // 1. Сначала ищем в основном источнике с точным соответствием
+    const scList = await searchSoundCloudDirectly(query);
+    if (scList.length >= 3) {
+        return scList;
+    }
+    // 2. Если в основном источнике мало треков, дополняем через Audius
+    const audList = await searchAudiusDirectly(query);
+    if (scList.length > 0) {
+        return scList.concat(audList);
+    }
+    return audList;
 }
 
 async function resolveStreamDirectly(track) {
@@ -1674,13 +1734,25 @@ async function startWaveFromSearchQuery(query) {
     showSystemNotification('Моя волна', `Поиск трека: «${cleanQ}»...`, 'info');
 
     try {
-        const res = await fetch('/api/search-music', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query: cleanQ })
-        });
-        const data = await res.json();
-        const tracks = Array.isArray(data) ? data : (data.tracks || []);
+        let tracks = [];
+        if (!isStandaloneApp) {
+            try {
+                const res = await fetch('/api/search-music', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: cleanQ }),
+                    signal: AbortSignal.timeout(5000)
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    tracks = Array.isArray(data) ? data : (data.tracks || []);
+                }
+            } catch (_) {}
+        }
+
+        if (tracks.length === 0) {
+            tracks = await searchMusicDirectly(cleanQ);
+        }
 
         if (tracks.length > 0) {
             const first = tracks[0];
@@ -2151,6 +2223,11 @@ function getRealBassEnergy() {
 }
 
 function renderLiveWallpaper() {
+    // На мобильных устройствах и Android отключаем тяжёлый 60 FPS Canvas-рендеринг для максимальной плавности
+    if (isStandaloneApp || window.innerWidth <= 768) {
+        return;
+    }
+
     const w = wpCanvas.width;
     const h = wpCanvas.height;
 
