@@ -448,6 +448,55 @@ async function getPlaylistTracks(playlistNumericId) {
     }
 }
 
+/**
+ * Получение треков чартов и плейлистов Spotify
+ */
+async function getSpotifyPlaylistTracks(playlistId = '37i9dQZF1DXcBWIGoYBM5M') {
+    try {
+        const res = await fetch(`https://open.spotify.com/embed/playlist/${playlistId}`, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            },
+            signal: AbortSignal.timeout(8000),
+        });
+        if (!res.ok) return [];
+        const html = await res.text();
+        const idx = html.indexOf('__NEXT_DATA__');
+        if (idx === -1) return [];
+        const start = html.indexOf('>', idx) + 1;
+        const end = html.indexOf('</script>', start);
+        const data = JSON.parse(html.slice(start, end));
+        const entity = data.props?.pageProps?.state?.data?.entity;
+        if (!entity || !entity.trackList) return [];
+
+        const playlistName = entity.name || 'Spotify Top Hits';
+
+        return entity.trackList.map((t, index) => {
+            const trackId = (t.uri || '').replace('spotify:track:', '') || `sp_${index}`;
+            const durationSec = Math.round((t.duration || 180000) / 1000);
+            const mins = Math.floor(durationSec / 60);
+            const secs = String(durationSec % 60).padStart(2, '0');
+            return {
+                id: `sp_${trackId}`,
+                source: 'spotify',
+                title: t.title || 'Unknown Title',
+                artist: t.subtitle || 'Spotify Artist',
+                album: playlistName,
+                duration: `${mins}:${secs}`,
+                durationSeconds: durationSec,
+                thumbnail: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop',
+                previewUrl: t.audioPreview?.url || '',
+                permalinkUrl: `https://open.spotify.com/track/${trackId}`,
+                isFullTrack: true,
+                isSpotify: true,
+            };
+        });
+    } catch (e) {
+        console.warn('Spotify playlist error:', e.message);
+        return [];
+    }
+}
+
 function startEmbeddedServer() {
     return new Promise((resolve, reject) => {
         const exp = express();
@@ -456,7 +505,39 @@ function startEmbeddedServer() {
         exp.use(express.static(path.join(__dirname, 'public')));
 
         exp.get('/api/resolve-stream', async (req, res) => {
-            const { transcodingUrl, source, streamUrl } = req.query;
+            const { transcodingUrl, source, streamUrl, previewUrl, artist, title, id } = req.query;
+
+            if (source === 'spotify' || (id && String(id).startsWith('sp_'))) {
+                try {
+                    const query = `${artist || ''} ${title || ''}`.trim();
+                    if (query) {
+                        const searchResults = await searchFullMusicTracks(query);
+                        if (searchResults && searchResults.length > 0) {
+                            const best = searchResults[0];
+                            if (best.transcodingUrl) {
+                                const cid = await getSoundCloudClientId();
+                                const resolved = await fetch(`${best.transcodingUrl}?client_id=${cid}`);
+                                if (resolved.ok) {
+                                    const data = await resolved.json();
+                                    return res.json({
+                                        streamUrl: data.url,
+                                        protocol: best.protocol || (best.transcodingUrl.includes('/hls') ? 'hls' : 'progressive'),
+                                    });
+                                }
+                            } else if (best.streamUrl) {
+                                return res.json({
+                                    streamUrl: best.streamUrl,
+                                    protocol: 'progressive',
+                                });
+                            }
+                        }
+                    }
+                } catch (_) {}
+
+                if (previewUrl) {
+                    return res.json({ streamUrl: previewUrl, protocol: 'progressive' });
+                }
+            }
 
             if (source === 'audius' && streamUrl) {
                 return res.json({ streamUrl, protocol: 'progressive' });
@@ -477,7 +558,30 @@ function startEmbeddedServer() {
                 }
             }
 
+            if (previewUrl) {
+                return res.json({ streamUrl: previewUrl, protocol: 'progressive' });
+            }
+
             return res.status(400).json({ error: 'Не указаны параметры потока' });
+        });
+
+        exp.all('/api/spotify-charts', async (req, res) => {
+            const chart = req.query?.chart || req.body?.chart || 'top';
+            const PLAYLISTS = {
+                'top': '37i9dQZF1DXcBWIGoYBM5M',
+                'global': '37i9dQZEVXbMDoHDwVN2tF',
+                'russia': '37i9dQZF1DXcZDD7cfEKhW',
+                'viral': '37i9dQZEVXbLiRSasKsNU9',
+                'rap': '37i9dQZF1DX0XUsuxWHRQd',
+                'dance': '37i9dQZF1DX4dyzvuaRJ0n',
+            };
+            const plId = PLAYLISTS[chart] || chart;
+            try {
+                const tracks = await getSpotifyPlaylistTracks(plId);
+                return res.json({ tracks });
+            } catch (err) {
+                return res.status(500).json({ error: err.message });
+            }
         });
 
         exp.post('/api/search-music', async (req, res) => {
@@ -487,6 +591,25 @@ function startEmbeddedServer() {
             }
 
             try {
+                const lower = userQuery.toLowerCase();
+                if (userQuery.startsWith('spotify:') || lower.includes('spotify') || lower.includes('спотифай')) {
+                    let chartId = '37i9dQZF1DXcBWIGoYBM5M';
+                    if (lower.includes('russia') || lower.includes('россия') || lower.includes('хит')) {
+                        chartId = '37i9dQZF1DXcZDD7cfEKhW';
+                    } else if (lower.includes('global') || lower.includes('топ 50')) {
+                        chartId = '37i9dQZEVXbMDoHDwVN2tF';
+                    } else if (lower.includes('viral') || lower.includes('вирус')) {
+                        chartId = '37i9dQZEVXbLiRSasKsNU9';
+                    }
+                    const spotifyTracks = await getSpotifyPlaylistTracks(chartId);
+                    if (spotifyTracks.length > 0) {
+                        return res.json({
+                            cleanQuery: userQuery,
+                            tracks: spotifyTracks,
+                        });
+                    }
+                }
+
                 const cleanQuery = cleanUserQuery(userQuery);
                 const tracks = await searchFullMusicTracks(cleanQuery);
                 return res.json({
@@ -646,9 +769,25 @@ function startEmbeddedServer() {
 
         // Скачивание трека (MP3 / Audio)
         exp.get('/api/download-track', async (req, res) => {
-            const { transcodingUrl, source, streamUrl, title, artist } = req.query;
+            const { transcodingUrl, source, streamUrl, previewUrl, title, artist } = req.query;
             try {
                 let finalAudioUrl = streamUrl;
+                if (!finalAudioUrl && (artist || title)) {
+                    const searchResults = await searchFullMusicTracks(`${artist || ''} ${title || ''}`.trim());
+                    if (searchResults && searchResults[0]) {
+                        const best = searchResults[0];
+                        if (best.transcodingUrl) {
+                            const cid = await getSoundCloudClientId();
+                            const resolved = await fetch(`${best.transcodingUrl}?client_id=${cid}`);
+                            if (resolved.ok) {
+                                const data = await resolved.json();
+                                finalAudioUrl = data.url;
+                            }
+                        } else if (best.streamUrl) {
+                            finalAudioUrl = best.streamUrl;
+                        }
+                    }
+                }
                 if (!finalAudioUrl && transcodingUrl) {
                     const cid = await getSoundCloudClientId();
                     const resolved = await fetch(`${transcodingUrl}?client_id=${cid}`);
@@ -656,6 +795,9 @@ function startEmbeddedServer() {
                         const data = await resolved.json();
                         finalAudioUrl = data.url;
                     }
+                }
+                if (!finalAudioUrl && previewUrl) {
+                    finalAudioUrl = previewUrl;
                 }
                 if (!finalAudioUrl) {
                     return res.status(400).send('Ссылка на трек недоступна для скачивания');

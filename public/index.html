@@ -18,7 +18,7 @@
         <!-- Левая панель навигации -->
         <aside class="sidebar">
             <div class="brand">
-                <img src="/icon.png" alt="DodoSpoti" class="brand-logo-img" />
+                <img src="/icon.png" alt="DodoSpoti" class="brand-logo-img" draggable="false" />
                 <div class="brand-text">
                     <span class="brand-title">Dodo<span class="brand-accent">Spoti</span></span>
                 </div>
@@ -29,19 +29,19 @@
                     <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1V9.5z"/>
                     </svg>
-                    <span>Главная</span>
+                    <span data-i18n="nav_discover">Главная</span>
                 </button>
                 <button class="nav-item" data-tab="wave">
                     <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M2 12h2M6 8v8M10 4v16M14 7v10M18 10v4M22 12h-2"/>
                     </svg>
-                    <span>Моя волна</span>
+                    <span data-i18n="nav_wave">Моя волна</span>
                 </button>
                 <button class="nav-item" data-tab="favorites">
                     <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                     </svg>
-                    <span>Мне нравится</span>
+                    <span data-i18n="nav_favorites">Мне нравится</span>
                     <span class="badge-count" id="favCountBadge">0</span>
                 </button>
                 <button class="nav-item" data-tab="history">
@@ -49,21 +49,21 @@
                         <circle cx="12" cy="12" r="9"/>
                         <polyline points="12 7 12 12 15 15"/>
                     </svg>
-                    <span>История</span>
+                    <span data-i18n="nav_history">История</span>
                 </button>
                 <button class="nav-item" data-tab="settings">
                     <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="3"/>
                         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.604.852.997 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
                     </svg>
-                    <span>Настройки</span>
+                    <span data-i18n="nav_settings">Настройки</span>
                 </button>
             </nav>
 
             <!-- Живой анализатор спектра в сайдбаре -->
             <div class="now-vibe-box">
                 <canvas id="miniVisualizer" width="220" height="54"></canvas>
-                <div class="vibe-status" id="vibeStatusText">Готов к воспроизведению</div>
+                <div class="vibe-status" id="vibeStatusText" data-i18n="vibe_ready">Готов к воспроизведению</div>
             </div>
 
             <div class="sidebar-version-badge">
@@ -85,16 +85,17 @@
                         type="text"
                         id="searchInput"
                         placeholder="Поиск треков, альбомов и исполнителей..."
+                        data-i18n-ph="search_placeholder"
                         autocomplete="off"
                     />
-                    <button type="submit" class="search-btn" id="searchBtn">Найти</button>
+                    <button type="submit" class="search-btn" id="searchBtn" data-i18n="search_btn">Найти</button>
                 </form>
 
                 <div class="topbar-actions">
                     <button id="updateBadgeBtn" class="topbar-update-btn" title="Проверить обновления DodoSpoti">
                         <span class="update-dot"></span>
                         <span class="update-ver">v1.1</span>
-                        <span id="updateBadgeLabel" class="update-badge-label">Актуально</span>
+                        <span id="updateBadgeLabel" class="update-badge-label" data-i18n="update_badge_ok">Актуально</span>
                     </button>
                 </div>
             </header>
@@ -102,40 +103,40 @@
             <!-- ВКЛАДКА 1: ГЛАВНАЯ И КАТАЛОГ -->
             <section id="tab-discover" class="tab-panel active">
                 <div class="mood-cards-row">
+                    <div class="mood-card spotify-card" data-chart="spotify:top">
+                        <span class="mood-tag" style="background:#1ed760; color:#000;">SPOTIFY</span>
+                        <div class="mood-title" data-i18n="spotify_top_hits">🟢 Топ Spotify Hits</div>
+                    </div>
+                    <div class="mood-card spotify-card" data-chart="spotify:russia">
+                        <span class="mood-tag" style="background:#1ed760; color:#000;">SPOTIFY</span>
+                        <div class="mood-title" data-i18n="spotify_russia_hits">🔥 Spotify Хит-парад</div>
+                    </div>
                     <div class="mood-card" data-chart="KME Джентльмены">
-                        <span class="mood-tag">ХИТ ДНЯ</span>
+                        <span class="mood-tag" data-i18n="tag_hit_day">ХИТ ДНЯ</span>
                         <div class="mood-title">KME (kme_dota)</div>
                     </div>
                     <div class="mood-card" data-chart="Miyagi Captain">
-                        <span class="mood-tag">ТОП ХИТЫ</span>
+                        <span class="mood-tag" data-i18n="tag_top_hits">ТОП ХИТЫ</span>
                         <div class="mood-title">Miyagi & Эндшпиль</div>
                     </div>
                     <div class="mood-card" data-chart="MACAN Asphalt 8">
-                        <span class="mood-tag">ТРЕНДЫ</span>
+                        <span class="mood-tag" data-i18n="tag_trends">ТРЕНДЫ</span>
                         <div class="mood-title">MACAN</div>
                     </div>
-                    <div class="mood-card" data-chart="Баста Сансара">
-                        <span class="mood-tag">ХИТЫ</span>
-                        <div class="mood-title">Баста</div>
-                    </div>
                     <div class="mood-card" data-chart="The Weeknd Blinding Lights">
-                        <span class="mood-tag">МИРОВОЙ ТОП</span>
+                        <span class="mood-tag" data-i18n="tag_world_top">МИРОВОЙ ТОП</span>
                         <div class="mood-title">The Weeknd</div>
-                    </div>
-                    <div class="mood-card" data-chart="Кино Группа крови">
-                        <span class="mood-tag">ЛЕГЕНДЫ</span>
-                        <div class="mood-title">Кино</div>
                     </div>
                 </div>
 
                 <div class="section-title-row">
-                    <h2 id="resultsHeading">Популярные треки</h2>
-                    <span class="results-subtitle" id="resultsCount">Нажмите на обложку для воспроизведения</span>
+                    <h2 id="resultsHeading" data-i18n="results_heading_top">Популярные треки</h2>
+                    <span class="results-subtitle" id="resultsCount" data-i18n="results_subtitle">Нажмите на обложку для воспроизведения</span>
                 </div>
 
                 <div id="smartWaveBanner" class="now-wave-chip" style="display: none;">
                     <span class="wave-live-dot"></span>
-                    <span id="smartWaveStatusText">Умная волна активна • Играет микс похожих треков</span>
+                    <span id="smartWaveStatusText" data-i18n="smart_wave_active">Умная волна активна • Играет микс похожих треков</span>
                 </div>
 
                 <div id="tracksContainer" class="tracks-grid"></div>
@@ -149,10 +150,10 @@
                             <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none">
                                 <path d="M2 12h2M6 8v8M10 4v16M14 7v10M18 10v4M22 12h-2"/>
                             </svg>
-                            Бесконечная волна • Умный рандом
+                            <span data-i18n="wave_pill">Бесконечная волна • Умный рандом</span>
                         </span>
-                        <h2 id="waveTitle">Моя Волна: Рандом по песням</h2>
-                        <p id="waveDesc">
+                        <h2 id="waveTitle" data-i18n="wave_title">Моя Волна: Рандом по песням</h2>
+                        <p id="waveDesc" data-i18n="wave_desc">
                             Выберите любой трек (например, «девочка в каре» или «сайт»), а дальше плеер сам подберёт бесконечную цепочку похожих композиций, артистов и ритмов без остановки.
                         </p>
                         <div class="wave-actions">
@@ -160,7 +161,7 @@
                                 <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
                                     <path d="M8 5v14l11-7z"/>
                                 </svg>
-                                <span>Запустить волну</span>
+                                <span data-i18n="start_wave_btn">Запустить волну</span>
                             </button>
                             <button id="refreshWaveBtn" class="secondary-btn">
                                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
@@ -168,7 +169,7 @@
                                     <polyline points="23 20 23 14 17 14"/>
                                     <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/>
                                 </svg>
-                                <span>Обновить подборку</span>
+                                <span data-i18n="refresh_wave_btn">Обновить подборку</span>
                             </button>
                         </div>
                     </div>
@@ -176,15 +177,15 @@
 
                 <div class="section-title-row">
                     <div>
-                        <h3 id="waveQueueHeading">В очереди волны</h3>
-                        <span class="results-subtitle" id="waveQueueSub">Следующие похожие композиции</span>
+                        <h3 id="waveQueueHeading" data-i18n="wave_queue_heading">В очереди волны</h3>
+                        <span class="results-subtitle" id="waveQueueSub" data-i18n="wave_queue_sub">Следующие похожие композиции</span>
                     </div>
                     <button id="clearWaveBtn" class="secondary-btn" style="padding: 6px 14px; font-size: 13px;" title="Очистить очередь волны">
                         <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
                             <line x1="18" y1="6" x2="6" y2="18"></line>
                             <line x1="6" y1="6" x2="18" y2="18"></line>
                         </svg>
-                        <span>Очистить волну</span>
+                        <span data-i18n="clear_wave_btn">Очистить волну</span>
                     </button>
                 </div>
 
@@ -194,31 +195,31 @@
             <!-- ВКЛАДКА: СТРАНИЦА АРТИСТА -->
             <section id="tab-artist" class="tab-panel">
                 <div class="artist-hero">
-                    <img id="artistHeroBg" src="/icon.png" class="artist-hero-bg" alt="" />
+                    <img id="artistHeroBg" src="/icon.png" class="artist-hero-bg" alt="" draggable="false" />
                     <div class="artist-avatar-wrap">
-                        <img id="artistAvatar" src="/icon.png" class="artist-avatar" alt="" />
+                        <img id="artistAvatar" src="/icon.png" class="artist-avatar" alt="" draggable="false" />
                     </div>
                     <div class="artist-info">
                         <span class="artist-badge">
                             <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
                                 <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
                             </svg>
-                            Исполнитель
+                            <span data-i18n="artist_badge">Исполнитель</span>
                         </span>
                         <h1 id="artistNameTitle" class="artist-name-title">Загрузка артиста...</h1>
-                        <div id="artistStats" class="artist-stats">Официальная дискография</div>
+                        <div id="artistStats" class="artist-stats" data-i18n="artist_stats">Официальная дискография</div>
                         <div class="artist-actions">
                             <button id="playAllArtistBtn" class="primary-btn">
                                 <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
                                     <path d="M8 5v14l11-7z"/>
                                 </svg>
-                                <span>Слушать всё</span>
+                                <span data-i18n="play_all_btn">Слушать всё</span>
                             </button>
                             <button id="radioArtistBtn" class="secondary-btn">
                                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M2 12h2M6 8v8M10 4v16M14 7v10M18 10v4M22 12h-2"/>
                                 </svg>
-                                <span>Волна артиста</span>
+                                <span data-i18n="artist_wave_btn">Волна артиста</span>
                             </button>
                             <a id="artistSourceLink" href="#" target="_blank" class="secondary-btn" title="Открыть профиль на SoundCloud / источнике">
                                 <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
@@ -226,7 +227,7 @@
                                     <polyline points="15 3 21 3 21 9"/>
                                     <line x1="10" y1="14" x2="21" y2="3"/>
                                 </svg>
-                                <span>Источник</span>
+                                <span data-i18n="source_btn">Источник</span>
                             </a>
                         </div>
                     </div>
@@ -234,8 +235,8 @@
 
                 <!-- Все треки артиста -->
                 <div class="section-title-row">
-                    <h3>Все треки артиста</h3>
-                    <span class="results-subtitle" id="artistTracksCount">Популярные композиции</span>
+                    <h3 data-i18n="artist_all_tracks">Все треки артиста</h3>
+                    <span class="results-subtitle" id="artistTracksCount" data-i18n="artist_top_tracks">Популярные композиции</span>
                 </div>
                 <div id="artistTracksContainer" class="tracks-grid"></div>
             </section>
@@ -243,8 +244,8 @@
             <!-- ВКЛАДКА 2: ЛЮБИМЫЕ ТРЕКИ -->
             <section id="tab-favorites" class="tab-panel">
                 <div class="section-title-row">
-                    <h2>Мне нравится</h2>
-                    <span class="results-subtitle">Ваша коллекция любимых песен</span>
+                    <h2 data-i18n="fav_heading">Мне нравится</h2>
+                    <span class="results-subtitle" data-i18n="fav_subtitle">Ваша коллекция любимых песен</span>
                 </div>
                 <div id="favoritesContainer" class="tracks-grid"></div>
             </section>
@@ -252,8 +253,8 @@
             <!-- ВКЛАДКА 3: ИСТОРИЯ -->
             <section id="tab-history" class="tab-panel">
                 <div class="section-title-row">
-                    <h2>Недавно прослушано</h2>
-                    <span class="results-subtitle">История воспроизведения</span>
+                    <h2 data-i18n="hist_heading">Недавно прослушано</h2>
+                    <span class="results-subtitle" data-i18n="hist_subtitle">История воспроизведения</span>
                 </div>
                 <div id="historyContainer" class="tracks-grid"></div>
             </section>
@@ -261,61 +262,61 @@
             <!-- ВКЛАДКА 4: НАСТРОЙКИ И ЖИВЫЕ ОБОИ -->
             <section id="tab-settings" class="tab-panel">
                 <div class="section-title-row">
-                    <h2>Настройки и Видео-обои</h2>
-                    <span class="results-subtitle">Персонализация DodoSpoti</span>
+                    <h2 data-i18n="settings_heading">Настройки и Видео-обои</h2>
+                    <span class="results-subtitle" data-i18n="settings_sub">Персонализация DodoSpoti</span>
                 </div>
 
                 <div class="settings-container">
                     <div class="settings-group">
-                        <h3>Анимированные видео-обои</h3>
-                        <p class="settings-hint">Выберите живую видео-сцену для фона приложения</p>
+                        <h3 data-i18n="settings_wallpapers">Анимированные видео-обои</h3>
+                        <p class="settings-hint" data-i18n="settings_wallpapers_hint">Выберите живую видео-сцену для фона приложения</p>
                         <div class="wallpaper-selector" id="wallpaperSelector">
                             <div class="wp-card active" data-wp="aurora" data-color="#1ed760">
                                 <div class="wp-preview wp-aurora"></div>
-                                <div class="wp-name">Северное Сияние</div>
+                                <div class="wp-name" data-i18n="wp_aurora">Северное Сияние</div>
                             </div>
                             <div class="wp-card" data-wp="dodo" data-color="#ff6900">
                                 <div class="wp-preview wp-dodo"></div>
-                                <div class="wp-name">Огненный Пульс</div>
+                                <div class="wp-name" data-i18n="wp_dodo">Огненный Пульс</div>
                             </div>
                             <div class="wp-card" data-wp="synthwave" data-color="#d946ef">
                                 <div class="wp-preview wp-synth"></div>
-                                <div class="wp-name">Киберпанк Сетка</div>
+                                <div class="wp-name" data-i18n="wp_synth">Киберпанк Сетка</div>
                             </div>
                             <div class="wp-card" data-wp="galaxy" data-color="#3b82f6">
                                 <div class="wp-preview wp-galaxy"></div>
-                                <div class="wp-name">Глубокий Космос</div>
+                                <div class="wp-name" data-i18n="wp_galaxy">Глубокий Космос</div>
                             </div>
                             <div class="wp-card" data-wp="phonk" data-color="#ef4444">
                                 <div class="wp-preview wp-phonk"></div>
-                                <div class="wp-name">Ночной Фонк</div>
+                                <div class="wp-name" data-i18n="wp_phonk">Ночной Фонк</div>
                             </div>
                         </div>
                     </div>
 
                     <div class="settings-group">
-                        <h3>Цвет и реакция на музыку</h3>
+                        <h3 data-i18n="settings_color_music">Цвет и реакция на музыку</h3>
 
                         <label class="setting-row">
                             <div class="setting-info">
-                                <span class="setting-title">Движение обоев только когда играет музыка</span>
-                                <span class="setting-sub">Обои оживают и пульсируют под реальный бас песни во время воспроизведения</span>
+                                <span class="setting-title" data-i18n="settings_move_on_music">Движение обоев только когда играет музыка</span>
+                                <span class="setting-sub" data-i18n="settings_move_on_music_sub">Обои оживают и пульсируют под реальный бас песни во время воспроизведения</span>
                             </div>
                             <input type="checkbox" id="toggleMoveOnMusic" checked />
                         </label>
 
                         <label class="setting-row">
                             <div class="setting-info">
-                                <span class="setting-title">Автоматически подбирать цвет интерфейса под видео-обои</span>
-                                <span class="setting-sub">Кнопки, подсветка карточек, ползунки и эквалайзер окрашиваются в тон обоев</span>
+                                <span class="setting-title" data-i18n="settings_auto_color">Автоматически подбирать цвет интерфейса под видео-обои</span>
+                                <span class="setting-sub" data-i18n="settings_auto_color_sub">Кнопки, подсветка карточек, ползунки и эквалайзер окрашиваются в тон обоев</span>
                             </div>
                             <input type="checkbox" id="toggleAutoColor" checked />
                         </label>
 
                         <div class="setting-row">
                             <div class="setting-info">
-                                <span class="setting-title">Свой цвет акцента</span>
-                                <span class="setting-sub">Выберите любой фирменный оттенок вручную</span>
+                                <span class="setting-title" data-i18n="settings_accent_color">Свой цвет акцента</span>
+                                <span class="setting-sub" data-i18n="settings_accent_color_sub">Выберите любой фирменный оттенок вручную</span>
                             </div>
                             <div class="color-swatches" id="colorSwatches">
                                 <button class="swatch" data-swatch="#1ed760" style="background:#1ed760"></button>
@@ -329,32 +330,70 @@
 
                         <div class="setting-row">
                             <div class="setting-info">
-                                <span class="setting-title">Сила басовой пульсации обоев</span>
-                                <span class="setting-sub">Насколько сильно видео-обои реагируют на бит песни</span>
+                                <span class="setting-title" data-i18n="settings_bass_intensity">Сила басовой пульсации обоев</span>
+                                <span class="setting-sub" data-i18n="settings_bass_intensity_sub">Насколько сильно видео-обои реагируют на бит песни</span>
                             </div>
                             <input type="range" id="bassIntensitySlider" min="20" max="200" value="130" class="settings-slider" />
                         </div>
 
                         <div class="setting-row">
                             <div class="setting-info">
-                                <span class="setting-title">Прозрачность стеклянного интерфейса</span>
-                                <span class="setting-sub">Регулирует видимость живых видео-обоев сквозь панели</span>
+                                <span class="setting-title" data-i18n="settings_glass_opacity">Прозрачность стеклянного интерфейса</span>
+                                <span class="setting-sub" data-i18n="settings_glass_sub">Регулирует видимость живых видео-обоев сквозь панели</span>
                             </div>
                             <input type="range" id="glassOpacitySlider" min="30" max="90" value="62" class="settings-slider" />
                         </div>
                     </div>
 
+                    <!-- Блок выбора языка интерфейса -->
+                    <div class="settings-group">
+                        <h3 data-i18n="settings_lang">Язык интерфейса / Interface Language</h3>
+                        <p class="settings-hint" data-i18n="settings_lang_hint">Выберите основной язык приложения</p>
+                        <div class="language-selector-row">
+                            <button class="lang-btn active" data-lang="ru">
+                                <span class="lang-flag">🇷🇺</span>
+                                <span>Русский</span>
+                            </button>
+                            <button class="lang-btn" data-lang="en">
+                                <span class="lang-flag">🇬🇧</span>
+                                <span>English</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Блок правовой информации и защиты товарных знаков -->
+                    <div class="settings-group">
+                        <h3 data-i18n="settings_legal">Правовая информация и конфиденциальность</h3>
+                        <p class="settings-hint" data-i18n="settings_legal_hint">Защита товарных знаков, политика приватности и отказ от ответственности</p>
+                        <div class="legal-notice-box">
+                            <p class="legal-summary" data-i18n="legal_summary">
+                                <b>DodoSpoti</b> — полностью независимый проект с открытым исходным кодом. Не аффилирован и не связан со Spotify AB или Dodo Brands.
+                                Ваши данные хранятся на 100% локально на вашем ПК (Zero Telemetry).
+                            </p>
+                            <div class="legal-actions-row">
+                                <button id="openPrivacyModalBtn" class="secondary-btn small-btn">
+                                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                                    <span data-i18n="open_privacy_btn">Политика конфиденциальности</span>
+                                </button>
+                                <button id="openDisclaimerModalBtn" class="secondary-btn small-btn">
+                                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                                    <span data-i18n="open_disclaimer_btn">Товарные знаки и Disclaimer</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Блок обновлений на GitHub -->
                     <div class="settings-group">
-                        <h3>Обновления DodoSpoti</h3>
-                        <p class="settings-hint">Проверка новых версий и релизов на GitHub</p>
+                        <h3 data-i18n="settings_updates">Обновления DodoSpoti</h3>
+                        <p class="settings-hint" data-i18n="settings_updates_hint">Проверка новых версий и релизов на GitHub</p>
                         <div class="update-card-box">
                             <div class="update-info-block">
                                 <div class="update-version-row">
-                                    <span class="update-chip">Версия v1.1</span>
-                                    <span id="updateStatusText" class="update-status-badge ok">Актуальная версия</span>
+                                    <span class="update-chip" data-i18n="version_chip">Версия v1.1</span>
+                                    <span id="updateStatusText" class="update-status-badge ok" data-i18n="update_status_ok">Актуальная версия</span>
                                 </div>
-                                <p id="updateNotesText" class="update-desc">
+                                <p id="updateNotesText" class="update-desc" data-i18n="update_notes">
                                     DodoSpoti v1.1 — Постоянное сохранение библиотеки и лайков на диск, скачивание MP3, системные уведомления Windows и медиа-клавиши.
                                 </p>
                             </div>
@@ -364,13 +403,13 @@
                                         <polyline points="23 4 23 10 17 10"/>
                                         <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
                                     </svg>
-                                    <span>Проверить обновления</span>
+                                    <span data-i18n="check_updates_btn">Проверить обновления</span>
                                 </button>
                                 <a id="githubRepoLink" href="https://github.com/foridorpo-blip/DodoSpoti/releases" target="_blank" class="secondary-btn">
                                     <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
                                         <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
                                     </svg>
-                                    <span>Релизы на GitHub</span>
+                                    <span data-i18n="github_releases_btn">Релизы на GitHub</span>
                                 </a>
                             </div>
                         </div>
@@ -388,9 +427,10 @@
                 src="/icon.png"
                 alt="Cover"
                 class="player-cover"
+                draggable="false"
             />
             <div class="player-meta">
-                <div id="playerTitle" class="player-title">Выберите песню</div>
+                <div id="playerTitle" class="player-title" data-i18n="player_select_track">Выберите песню</div>
                 <div id="playerArtist" class="player-artist">DodoSpoti</div>
             </div>
             <button id="likeCurrentBtn" class="icon-btn" title="В любимые">
@@ -475,12 +515,31 @@
     <!-- Системный плавающий тост-уведомление (вместо стандартного alert) -->
     <div id="systemToast" class="system-toast">
         <div class="toast-glow"></div>
-        <div class="toast-icon-wrap" id="toastIconWrap">⚡</div>
+        <div class="toast-icon-wrap" id="toastIconWrap">
+            <img src="/icon.png" class="toast-brand-avatar" alt="DodoSpoti" draggable="false" />
+        </div>
         <div class="toast-content">
             <div id="toastTitle" class="toast-title">DodoSpoti v1.1</div>
             <div id="toastBody" class="toast-body">У вас установлена последняя версия!</div>
         </div>
         <button id="toastCloseBtn" class="toast-close-btn" title="Закрыть">✕</button>
+    </div>
+
+    <!-- Модальное окно правовой информации и политики конфиденциальности -->
+    <div id="legalModal" class="legal-modal-backdrop">
+        <div class="legal-modal-card">
+            <div class="legal-modal-header">
+                <div id="legalModalTitle" class="legal-modal-title">
+                    <span id="legalModalIcon">🛡️</span>
+                    <span id="legalModalTitleText">Правовая информация</span>
+                </div>
+                <button id="closeLegalModalBtn" class="legal-modal-close" title="Закрыть">✕</button>
+            </div>
+            <div id="legalModalBody" class="legal-modal-body"></div>
+            <div class="legal-modal-footer">
+                <button id="closeLegalModalBottomBtn" class="primary-btn small-btn">Понятно</button>
+            </div>
+        </div>
     </div>
 
     <script src="/hls.min.js"></script>
