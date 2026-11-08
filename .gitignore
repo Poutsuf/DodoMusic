@@ -22,7 +22,19 @@ Thumbs.db
 Desktop.ini
 .DS_Store
 
-# Large release archives
+# Large release archives and binaries
 *.zip
 *.tar.gz
+*.exe
+token.tmp
+*.tmp
+
+# Android build
+android-app/.gradle/
+android-app/build/
+android-app/app/build/
+android-app/local.properties
+bin-native/
+native-csharp/bin/
+native-csharp/obj/
 

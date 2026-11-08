@@ -34,7 +34,7 @@ namespace DodoSpoti
                 }
             }
 
-            // 2. Ищем бинарный исполняемый файл Electron
+            // 2. Ищем бинарный исполняемый файл
             string distExe = Path.Combine(baseDir, "dist", "DodoSpoti-win32-x64", "DodoSpoti.exe");
             if (!File.Exists(distExe))
             {
@@ -43,6 +43,15 @@ namespace DodoSpoti
             if (!File.Exists(distExe))
             {
                 distExe = Path.Combine(baseDir, "resources", "app", "DodoSpoti.exe");
+            }
+            if (!File.Exists(distExe))
+            {
+                string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                string knownPath = Path.Combine(userProfile, ".gemini", "antigravity", "scratch", "dodospoti", "dist", "DodoSpoti-win32-x64", "DodoSpoti.exe");
+                if (File.Exists(knownPath))
+                {
+                    distExe = knownPath;
+                }
             }
 
             if (File.Exists(distExe))

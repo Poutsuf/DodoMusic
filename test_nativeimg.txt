@@ -1,0 +1,24 @@
+node:internal/modules/cjs/loader:1235
+  throw err;
+  ^
+
+Error: Cannot find module 'electron'
+Require stack:
+- C:\Users\Сергей\.gemini\antigravity\scratch\dodospoti\[eval]
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1232:15)
+    at Module._load (node:internal/modules/cjs/loader:1058:27)
+    at c._load (node:electron/js2c/node_init:2:16955)
+    at Module.require (node:internal/modules/cjs/loader:1318:19)
+    at require (node:internal/modules/helpers:179:18)
+    at [eval]:1:25
+    at runScriptInThisContext (node:internal/vm:209:10)
+    at node:internal/process/execution:118:14
+    at [eval]-wrapper:6:24
+    at runScript (node:internal/process/execution:101:62) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    'C:\\Users\\Сергей\\.gemini\\antigravity\\scratch\\dodospoti\\[eval]'
+  ]
+}
+
+Node.js v20.18.3

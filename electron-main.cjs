@@ -1,4 +1,4 @@
-const { app, BrowserWindow, shell, Tray, Menu, Notification, dialog } = require('electron');
+const { app, BrowserWindow, shell, Tray, Menu, Notification, dialog, nativeImage } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
@@ -21,7 +21,7 @@ process.on('beforeExit', (code) => {
 });
 
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
-app.setAppUserModelId('DodoSpoti');
+app.setAppUserModelId('DodoSpoti.Player.v1');
 
 let cachedScClientId = '39AVoiZVrdvJEMFLH8T0c5WGshQaAPRJ';
 let lastClientIdFetch = 0;
@@ -923,7 +923,11 @@ async function createWindow() {
     serverInstance = server;
     fs.appendFileSync(debugLogPath, `[CREATE_WINDOW] Embedded server running on port ${port}\n`);
 
+    const icoPath = path.join(__dirname, 'public', 'icon.ico');
     const pngIconPath = path.join(__dirname, 'public', 'icon.png');
+    const iconFilePath = fs.existsSync(icoPath) ? icoPath : pngIconPath;
+    const appIcon = nativeImage.createFromPath(iconFilePath);
+
     const winOptions = {
         width: 1320,
         height: 840,
@@ -933,16 +937,17 @@ async function createWindow() {
         title: 'DodoSpoti',
         backgroundColor: '#07080c',
         autoHideMenuBar: true,
+        icon: appIcon,
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
         },
     };
-    if (fs.existsSync(pngIconPath)) {
-        winOptions.icon = pngIconPath;
-    }
 
     mainWindow = new BrowserWindow(winOptions);
+    try {
+        mainWindow.setIcon(appIcon);
+    } catch (_) {}
     fs.appendFileSync(debugLogPath, `[CREATE_WINDOW] BrowserWindow created\n`);
 
     setupSystemTray();

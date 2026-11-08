@@ -467,6 +467,292 @@ app.all('/api/related-tracks', async (req, res) => {
     }
 });
 
+const ARTIST_CLUSTERS = {
+    phonk: ['DVRST', 'Kordhell', 'Ghostface Playa', 'SXMPRA', 'INTERWORLD', 'Dxrk ダーク', 'Pharmacist', 'Hensonn', 'green orxnge', 'g3ox_em'],
+    rap_ru: ['Miyagi & Эндшпиль', 'MACAN', 'KME', 'Big Baby Tape', 'Kizaru', 'OG Buda', 'Платина', 'Friendly Thug 52 NGG', 'Скриптонит', 'SALUKI', 'Toxi$', 'Shadowraze', 'Markul'],
+    pop_ru: ['JONY', 'HammAli & Navai', 'ANNA ASTI', 'Mary Gu', 'Три Дня Дождя', 'Zivert', 'Ramil\'', 'Xcho', 'Dabro', 'INSTASAMKA', 'Кравц', 'Моя Мишель', 'Гио Пика'],
+    global_hits: ['The Weeknd', 'Post Malone', 'Travis Scott', 'Billie Eilish', 'Dua Lipa', 'Drake', 'Kendrick Lamar', 'Metro Boomin', 'Playboi Carti', 'Eminem', 'Arctic Monkeys'],
+    rock_alt: ['Три Дня Дождя', 'Король и Шут', 'Полматери', 'Linkin Park', 'Skillet', 'Nirvana', 'Green Day', 'NЮ', 'Кино', 'Би-2'],
+    chill_lofi: ['Lofi Girl', 'Idealism', 'Kupla', 'Kudasaibeats', 'Jinsang', 'potsu', 'Shiloh Dynasty']
+};
+
+function detectTrackGenre(title = '', artist = '') {
+    const combined = `${artist} ${title}`.toLowerCase();
+    if (combined.includes('phonk') || combined.includes('drift') || combined.includes('dvrst') || combined.includes('kordhell') || combined.includes('cowbell')) return 'phonk';
+    if (combined.includes('rock') || combined.includes('рок') || combined.includes('metal') || combined.includes('панк') || combined.includes('дождя') || combined.includes('шут') || combined.includes('skillet') || combined.includes('linkin')) return 'rock_alt';
+    if (combined.includes('lofi') || combined.includes('lo-fi') || combined.includes('chill') || combined.includes('ambient') || combined.includes('relax') || combined.includes('sleep') || combined.includes('study')) return 'chill_lofi';
+    if (combined.includes('weeknd') || combined.includes('travis') || combined.includes('drake') || combined.includes('scott') || combined.includes('eilish') || combined.includes('post malone') || combined.includes('eminem')) return 'global_hits';
+    if (combined.includes('miyagi') || combined.includes('эндшпиль') || combined.includes('macan') || combined.includes('kme') || combined.includes('buda') || combined.includes('tape') || combined.includes('kizaru') || combined.includes('платина') || combined.includes('рэп') || combined.includes('rap') || combined.includes('trap')) return 'rap_ru';
+    return 'pop_ru';
+}
+
+export async function generateTasteAdaptiveWave({ seedTrack = {}, tasteProfile = {} }) {
+    const results = [];
+    const seenIds = new Set();
+    const seenSignatures = new Set();
+
+    const dislikedIds = new Set(tasteProfile.dislikedIds || []);
+    const seedId = seedTrack.id || '';
+    if (seedId) seenIds.add(seedId);
+
+    const seedTitle = (seedTrack.title || '').trim();
+    const seedArtist = (seedTrack.artist || '').trim();
+    const seedSig = `${seedArtist.toLowerCase()}__${seedTitle.toLowerCase()}`;
+    if (seedArtist && seedTitle) seenSignatures.add(seedSig);
+
+    // 1. Определение жанра семенного трека
+    const genre = detectTrackGenre(seedTitle, seedArtist);
+    const cluster = ARTIST_CLUSTERS[genre] || ARTIST_CLUSTERS.pop_ru;
+
+    // 2. Прямые рекомендации по семенному треку
+    try {
+        const directRelated = await getRelatedMusicTracks({
+            trackId: seedTrack.id,
+            artist: seedArtist,
+            title: seedTitle
+        });
+        for (const t of directRelated) {
+            const sig = `${(t.artist || '').toLowerCase()}__${(t.title || '').toLowerCase()}`;
+            if (!seenIds.has(t.id) && !dislikedIds.has(t.id) && !seenSignatures.has(sig)) {
+                if (seedTitle && t.title.toLowerCase().includes(seedTitle.toLowerCase().slice(0, 7))) continue;
+                seenIds.add(t.id);
+                seenSignatures.add(sig);
+                results.push(t);
+            }
+        }
+    } catch (e) {
+        console.warn('[Taste Wave Direct Related Warning]', e.message);
+    }
+
+    // 3. Анализ вкуса пользователя и подбор похожих артистов
+    const candidateArtists = [];
+
+    // Добавляем 2-3 похожих артистов из кластера жанра
+    const filteredCluster = cluster.filter(a => !a.toLowerCase().includes(seedArtist.toLowerCase()) && !seedArtist.toLowerCase().includes(a.toLowerCase()));
+    const shuffledCluster = filteredCluster.sort(() => 0.5 - Math.random());
+    candidateArtists.push(...shuffledCluster.slice(0, 3));
+
+    // Добавляем 1-2 любимых артистов из профиля пользователя
+    const userFavs = (tasteProfile.topArtists || []).filter(a => a && !candidateArtists.includes(a) && a !== seedArtist);
+    if (userFavs.length > 0) {
+        candidateArtists.push(...userFavs.slice(0, 2));
+    }
+
+    // Параллельный поиск композиций по кандидатам
+    const searchPromises = candidateArtists.map(async (art) => {
+        try {
+            return await searchFullMusicTracks(art);
+        } catch (_) {
+            return [];
+        }
+    });
+
+    const searchBatchResults = await Promise.all(searchPromises);
+    const candidateTracks = [];
+
+    for (const batch of searchBatchResults) {
+        if (!Array.isArray(batch)) continue;
+        for (const t of batch.slice(0, 4)) {
+            const sig = `${(t.artist || '').toLowerCase()}__${(t.title || '').toLowerCase()}`;
+            if (!seenIds.has(t.id) && !dislikedIds.has(t.id) && !seenSignatures.has(sig)) {
+                if (seedTitle && t.title.toLowerCase().includes(seedTitle.toLowerCase().slice(0, 7))) continue;
+                seenIds.add(t.id);
+                seenSignatures.add(sig);
+                candidateTracks.push(t);
+            }
+        }
+    }
+
+    // 4. Добавление свежих открытий из Spotify
+    try {
+        const topChartTracks = await getSpotifyPlaylistTracks('37i9dQZEVXbMDoHDwVN2tF');
+        const shuffledChart = topChartTracks.sort(() => 0.5 - Math.random());
+        for (const t of shuffledChart.slice(0, 4)) {
+            const sig = `${(t.artist || '').toLowerCase()}__${(t.title || '').toLowerCase()}`;
+            if (!seenIds.has(t.id) && !dislikedIds.has(t.id) && !seenSignatures.has(sig)) {
+                seenIds.add(t.id);
+                seenSignatures.add(sig);
+                candidateTracks.push(t);
+            }
+        }
+    } catch (_) {}
+
+    // 5. Умное чередование треков (Radio Flow Shuffle)
+    const finalQueue = [];
+    let relIdx = 0;
+    let candIdx = 0;
+
+    const shuffledCandidates = candidateTracks.sort(() => 0.5 - Math.random());
+
+    while (finalQueue.length < 25 && (relIdx < results.length || candIdx < shuffledCandidates.length)) {
+        if (relIdx < results.length) {
+            finalQueue.push(results[relIdx++]);
+        }
+        if (candIdx < shuffledCandidates.length) {
+            finalQueue.push(shuffledCandidates[candIdx++]);
+        }
+        if (candIdx < shuffledCandidates.length && Math.random() > 0.4) {
+            finalQueue.push(shuffledCandidates[candIdx++]);
+        }
+    }
+
+    return {
+        genre,
+        detectedCluster: cluster.slice(0, 5),
+        tracks: finalQueue.length > 0 ? finalQueue : results,
+    };
+}
+
+app.post('/api/taste-wave', async (req, res) => {
+    const seedTrack = req.body?.seedTrack || {};
+    const tasteProfile = req.body?.tasteProfile || {};
+
+    try {
+        const wave = await generateTasteAdaptiveWave({ seedTrack, tasteProfile });
+        return res.json(wave);
+    } catch (err) {
+        console.error('Error generating taste wave:', err);
+        return res.status(500).json({ error: err.message || 'Ошибка генерации волны' });
+    }
+});
+
+/**
+ * Парсер LRC текста с таймкодами [mm:ss.xx]
+ */
+function parseLrc(lrcString) {
+    if (!lrcString || typeof lrcString !== 'string') return [];
+    const lines = lrcString.split(/\r?\n/);
+    const parsed = [];
+    const timeRegex = /\[(\d{1,2}):(\d{2})(?:\.(\d{1,3}))?\]/g;
+
+    for (const rawLine of lines) {
+        const trimmed = rawLine.trim();
+        if (!trimmed) continue;
+        if (/^\[(ti|ar|al|au|by|offset|length|re|ve):/i.test(trimmed)) continue;
+
+        const times = [];
+        let match;
+        timeRegex.lastIndex = 0;
+        while ((match = timeRegex.exec(trimmed)) !== null) {
+            const minutes = parseInt(match[1], 10);
+            const seconds = parseInt(match[2], 10);
+            const msStr = (match[3] || '0').padEnd(3, '0').slice(0, 3);
+            const ms = parseInt(msStr, 10);
+            times.push(minutes * 60 + seconds + ms / 1000);
+        }
+
+        const text = trimmed.replace(timeRegex, '').trim();
+        if (times.length > 0) {
+            for (const time of times) {
+                parsed.push({ time, text });
+            }
+        }
+    }
+
+    parsed.sort((a, b) => a.time - b.time);
+    return parsed;
+}
+
+/**
+ * Поиск синхронизированного или обычного текста песни
+ */
+export async function fetchTrackLyrics(title = '', artist = '', duration = 0) {
+    const cleanTitle = (title || '')
+        .replace(/\(.*?\)/g, '')
+        .replace(/\[.*?\]/g, '')
+        .replace(/feat\..*$/i, '')
+        .replace(/ft\..*$/i, '')
+        .trim();
+    const cleanArtist = (artist || '')
+        .replace(/\(.*?\)/g, '')
+        .replace(/feat\..*$/i, '')
+        .replace(/ft\..*$/i, '')
+        .trim();
+
+    // 1. Поиск точного совпадения через LRCLIB API /api/get
+    if (cleanTitle && cleanArtist) {
+        try {
+            let getUrl = `https://lrclib.net/api/get?track_name=${encodeURIComponent(cleanTitle)}&artist_name=${encodeURIComponent(cleanArtist)}`;
+            if (duration > 0) getUrl += `&duration=${Math.round(duration)}`;
+            const res = await fetch(getUrl, {
+                headers: { 'User-Agent': 'DodoSpoti/1.1 (https://github.com/foridorpo-blip/DodoSpoti)' },
+                signal: AbortSignal.timeout(6000)
+            });
+            if (res.ok) {
+                const data = await res.json();
+                if (data.syncedLyrics) {
+                    return {
+                        found: true,
+                        synced: true,
+                        lines: parseLrc(data.syncedLyrics),
+                        plainLyrics: data.plainLyrics || '',
+                        trackName: data.name,
+                        artistName: data.artistName
+                    };
+                } else if (data.plainLyrics) {
+                    return {
+                        found: true,
+                        synced: false,
+                        lines: [],
+                        plainLyrics: data.plainLyrics,
+                        trackName: data.name,
+                        artistName: data.artistName
+                    };
+                }
+            }
+        } catch (_) {}
+    }
+
+    // 2. Поиск через поисковый метод LRCLIB API /api/search
+    const searchQueries = [
+        `${cleanArtist} ${cleanTitle}`.trim(),
+        cleanTitle,
+        title
+    ].filter(Boolean);
+
+    for (const q of searchQueries) {
+        try {
+            const searchUrl = `https://lrclib.net/api/search?q=${encodeURIComponent(q)}`;
+            const res = await fetch(searchUrl, {
+                headers: { 'User-Agent': 'DodoSpoti/1.1 (https://github.com/foridorpo-blip/DodoSpoti)' },
+                signal: AbortSignal.timeout(6000)
+            });
+            if (res.ok) {
+                const list = await res.json();
+                if (Array.isArray(list) && list.length > 0) {
+                    const best = list.find(item => item.syncedLyrics) || list[0];
+                    if (best && (best.syncedLyrics || best.plainLyrics)) {
+                        return {
+                            found: true,
+                            synced: Boolean(best.syncedLyrics),
+                            lines: best.syncedLyrics ? parseLrc(best.syncedLyrics) : [],
+                            plainLyrics: best.plainLyrics || '',
+                            trackName: best.name,
+                            artistName: best.artistName
+                        };
+                    }
+                }
+            }
+        } catch (_) {}
+    }
+
+    return { found: false, synced: false, lines: [], plainLyrics: '' };
+}
+
+app.get('/api/lyrics', async (req, res) => {
+    const title = req.query.title || '';
+    const artist = req.query.artist || '';
+    const duration = parseFloat(req.query.duration || '0');
+
+    try {
+        const lyrics = await fetchTrackLyrics(title, artist, duration);
+        return res.json(lyrics);
+    } catch (err) {
+        console.error('Error fetching lyrics:', err);
+        return res.status(500).json({ error: err.message || 'Ошибка поиска текста' });
+    }
+});
+
 /**
  * Получение профиля артиста, его дискографии и плейлистов
  */
@@ -780,7 +1066,7 @@ app.get('/api/download-track', async (req, res) => {
     }
 });
 
-export function startServer(preferredPort = Number(process.env.PORT) || 3000) {
+export function startServer(preferredPort = Number(process.env.PORT) || 58240) {
     return new Promise((resolve, reject) => {
         const server = http.createServer(app);
         server.on('error', (err) => {

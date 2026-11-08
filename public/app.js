@@ -68,6 +68,9 @@ const I18N = {
         vibe_playing: 'Воспроизведение',
         search_placeholder: 'Поиск треков, альбомов и исполнителей...',
         search_btn: 'Найти',
+        search_history_title: 'История поиска',
+        clear_history_btn: 'Очистить всё',
+        taste_dna_title: 'ДНК Вашего Вкуса (Анализ предпочтений)',
         update_badge_ok: 'Актуально',
         spotify_top_hits: '🟢 Топ Spotify Hits',
         spotify_russia_hits: '🔥 Spotify Хит-парад',
@@ -80,11 +83,13 @@ const I18N = {
         smart_wave_active: 'Умная волна активна • Играет микс похожих треков',
         wave_pill: 'Бесконечная волна • Умный рандом',
         wave_title: 'Моя Волна: Рандом по песням',
-        wave_desc: 'Выберите любой трек (например, «девочка в каре» или «сайт»), а дальше плеер сам подберёт бесконечную цепочку похожих композиций, артистов и ритмов без остановки.',
+        wave_desc: 'Выберите любой трек (например, «девочка в каре» или «сайт») или воспользуйтесь поиском ниже, а плеер сам подберёт бесконечную цепочку похожих композиций, артистов и ритмов без остановки.',
+        wave_search_start_btn: 'Найти и запустить',
+        wave_chips_label: 'Жанры волны:',
         start_wave_btn: 'Запустить волну',
         refresh_wave_btn: 'Обновить подборку',
         wave_queue_heading: 'В очереди волны',
-        wave_queue_sub: 'Следующие похожие композиции',
+        wave_queue_sub: 'Следующие композиции волны (нажмите ✕ на карточке, чтобы удалить трек)',
         clear_wave_btn: 'Очистить волну',
         artist_badge: 'Исполнитель',
         artist_stats: 'Официальная дискография',
@@ -133,6 +138,19 @@ const I18N = {
         github_releases_btn: 'Релизы на GitHub',
         player_select_track: 'Выберите песню',
         legal_close_btn: 'Понятно',
+        lyrics_modal_title: 'Текст песни',
+        lyrics_status_synced: 'Караоке синхронизация',
+        lyrics_status_plain: 'Текст песни',
+        lyrics_now_playing: 'Сейчас играет',
+        lyrics_not_playing: 'Не играет',
+        lyrics_play_sync: 'Слушать с текстом',
+        lyrics_autoscroll_on: 'Автопрокрутка: ВКЛ',
+        lyrics_autoscroll_off: 'Автопрокрутка: ВЫКЛ',
+        lyrics_loading: 'Поиск синхронизированного текста песни...',
+        lyrics_empty_title: 'Текст песни пока не найден',
+        lyrics_empty_desc: 'Для данного трека текст в базе пока отсутствует. Вы можете продолжать слушать песню дальше.',
+        lyrics_hint: '💡 Нажмите на любую строчку текста, чтобы перейти к этому моменту в песне',
+        lyrics_btn_title: 'Текст песни и караоке (L)',
     },
     en: {
         nav_discover: 'Discover',
@@ -144,6 +162,9 @@ const I18N = {
         vibe_playing: 'Now playing',
         search_placeholder: 'Search tracks, albums and artists...',
         search_btn: 'Search',
+        search_history_title: 'Recent Searches',
+        clear_history_btn: 'Clear All',
+        taste_dna_title: 'Taste DNA (Preference Analysis)',
         update_badge_ok: 'Up to date',
         spotify_top_hits: '🟢 Top Spotify Hits',
         spotify_russia_hits: '🔥 Spotify Hit Parade',
@@ -156,11 +177,13 @@ const I18N = {
         smart_wave_active: 'Smart Wave active • Mixing similar tracks',
         wave_pill: 'Infinite Wave • Smart Random',
         wave_title: 'My Wave: Smart Song Flow',
-        wave_desc: 'Select any track or genre, and DodoSpoti will automatically synthesize an infinite stream of matching artists, rhythms and melodies without interruptions.',
+        wave_desc: 'Select any track or genre, or use the search bar below, and DodoSpoti will automatically synthesize an infinite stream of matching artists, rhythms and melodies without interruptions.',
+        wave_search_start_btn: 'Search & Launch Wave',
+        wave_chips_label: 'Wave Genres:',
         start_wave_btn: 'Start Wave',
         refresh_wave_btn: 'Refresh Mix',
         wave_queue_heading: 'Wave Queue',
-        wave_queue_sub: 'Next recommended tracks',
+        wave_queue_sub: 'Next wave tracks (click ✕ on any card to remove it)',
         clear_wave_btn: 'Clear Wave',
         artist_badge: 'Artist',
         artist_stats: 'Official Discography',
@@ -209,6 +232,19 @@ const I18N = {
         github_releases_btn: 'GitHub Releases',
         player_select_track: 'Select a track',
         legal_close_btn: 'Got it',
+        lyrics_modal_title: 'Song Lyrics',
+        lyrics_status_synced: 'Karaoke Synced',
+        lyrics_status_plain: 'Song Lyrics',
+        lyrics_now_playing: 'Now playing',
+        lyrics_not_playing: 'Not playing',
+        lyrics_play_sync: 'Play with Lyrics',
+        lyrics_autoscroll_on: 'Autoscroll: ON',
+        lyrics_autoscroll_off: 'Autoscroll: OFF',
+        lyrics_loading: 'Searching for synchronized lyrics...',
+        lyrics_empty_title: 'Lyrics not found',
+        lyrics_empty_desc: 'No lyrics found for this track yet. You can continue listening.',
+        lyrics_hint: '💡 Click any line to jump to that moment in the song',
+        lyrics_btn_title: 'Lyrics & Karaoke (L)',
     }
 };
 
@@ -376,6 +412,10 @@ function syncPlayPauseUI() {
             vibeStatusText.textContent = 'Готов к воспроизведению';
         }
     }
+
+    if (typeof updateLyricsPlaySyncButtonState === 'function') {
+        updateLyricsPlaySyncButtonState();
+    }
 }
 
 audioPlayer.volume = Number(volumeBar.value) / 100;
@@ -407,6 +447,8 @@ audioPlayer.addEventListener('timeupdate', () => {
         durationTimeEl.textContent = formatTime(dur);
         updateSliderFill(seekBar);
     }
+
+    syncLyricsWithTime(current);
 });
 
 audioPlayer.addEventListener('ended', () => {
@@ -425,9 +467,249 @@ function formatTime(sec) {
     return `${m}:${s < 10 ? '0' : ''}${s}`;
 }
 
+// ==========================================
+// ИСТОРИЯ ПОИСКА (SEARCH HISTORY)
+// ==========================================
+function getSearchHistory() {
+    try {
+        const raw = localStorage.getItem('dodospoti_search_history');
+        return raw ? JSON.parse(raw) : [];
+    } catch (_) {
+        return [];
+    }
+}
+
+function saveSearchHistoryQuery(query) {
+    const q = (query || '').trim();
+    if (!q || q.length < 2) return;
+    let list = getSearchHistory();
+    list = list.filter(item => item.toLowerCase() !== q.toLowerCase());
+    list.unshift(q);
+    if (list.length > 12) list = list.slice(0, 12);
+    try {
+        localStorage.setItem('dodospoti_search_history', JSON.stringify(list));
+    } catch (_) {}
+}
+
+function deleteSearchHistoryQuery(query) {
+    let list = getSearchHistory();
+    list = list.filter(item => item.toLowerCase() !== (query || '').toLowerCase());
+    try {
+        localStorage.setItem('dodospoti_search_history', JSON.stringify(list));
+    } catch (_) {}
+}
+
+function clearAllSearchHistory() {
+    try {
+        localStorage.removeItem('dodospoti_search_history');
+    } catch (_) {}
+}
+
+function renderSearchHistoryDropdown(dropdownEl, listEl, inputEl, onSearch) {
+    if (!dropdownEl || !listEl) return;
+    const historyList = getSearchHistory();
+
+    if (!historyList || historyList.length === 0) {
+        listEl.innerHTML = `<div class="search-history-empty">История поиска пуста</div>`;
+        dropdownEl.style.display = 'block';
+        return;
+    }
+
+    listEl.innerHTML = historyList.map(q => `
+        <div class="search-history-item" data-query="${encodeURIComponent(q)}">
+            <svg class="search-history-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <span class="search-history-text">${decodeHtml(q)}</span>
+            <button type="button" class="search-history-delete-btn" title="Удалить из истории">✕</button>
+        </div>
+    `).join('');
+
+    listEl.querySelectorAll('.search-history-item').forEach(item => {
+        const qText = decodeURIComponent(item.dataset.query);
+        const textSpan = item.querySelector('.search-history-text');
+        const delBtn = item.querySelector('.search-history-delete-btn');
+
+        textSpan?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (inputEl) inputEl.value = qText;
+            dropdownEl.style.display = 'none';
+            if (onSearch) onSearch(qText);
+        });
+
+        delBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            deleteSearchHistoryQuery(qText);
+            renderSearchHistoryDropdown(dropdownEl, listEl, inputEl, onSearch);
+        });
+    });
+
+    dropdownEl.style.display = 'block';
+}
+
+// ==========================================
+// СИСТЕМА АНАЛИЗА ВКУСА (USER TASTE PROFILER)
+// ==========================================
+function getUserTasteProfile() {
+    const artistScores = {};
+    const genreScores = {
+        'Рэп / Хип-Хоп': 0,
+        'Фонк / Drift': 0,
+        'Поп / Тренды': 0,
+        'Рок / Альтернатива': 0,
+        'Chill / Lo-Fi': 0,
+        'Мировые хиты': 0
+    };
+
+    likedTracks.forEach(t => {
+        if (!t) return;
+        const art = (t.artist || '').trim();
+        if (art) artistScores[art] = (artistScores[art] || 0) + 3;
+
+        const text = `${t.artist} ${t.title}`.toLowerCase();
+        if (text.includes('phonk') || text.includes('drift')) genreScores['Фонк / Drift'] += 3;
+        else if (text.includes('рэп') || text.includes('rap') || text.includes('kme') || text.includes('macan') || text.includes('miyagi') || text.includes('buda')) genreScores['Рэп / Хип-Хоп'] += 3;
+        else if (text.includes('рок') || text.includes('rock') || text.includes('metal')) genreScores['Рок / Альтернатива'] += 3;
+        else if (text.includes('lofi') || text.includes('chill')) genreScores['Chill / Lo-Fi'] += 3;
+        else if (text.includes('weeknd') || text.includes('travis') || text.includes('scott')) genreScores['Мировые хиты'] += 3;
+        else genreScores['Поп / Тренды'] += 2;
+    });
+
+    history.forEach(t => {
+        if (!t) return;
+        const art = (t.artist || '').trim();
+        if (art) artistScores[art] = (artistScores[art] || 0) + 1;
+
+        const text = `${t.artist} ${t.title}`.toLowerCase();
+        if (text.includes('phonk') || text.includes('drift')) genreScores['Фонк / Drift'] += 1;
+        else if (text.includes('рэп') || text.includes('rap') || text.includes('kme') || text.includes('macan') || text.includes('miyagi') || text.includes('buda')) genreScores['Рэп / Хип-Хоп'] += 1;
+        else if (text.includes('рок') || text.includes('rock') || text.includes('metal')) genreScores['Рок / Альтернатива'] += 1;
+        else if (text.includes('lofi') || text.includes('chill')) genreScores['Chill / Lo-Fi'] += 1;
+        else if (text.includes('weeknd') || text.includes('travis') || text.includes('scott')) genreScores['Мировые хиты'] += 1;
+        else genreScores['Поп / Тренды'] += 1;
+    });
+
+    const sHist = getSearchHistory();
+    sHist.forEach(q => {
+        const lower = q.toLowerCase();
+        if (lower.includes('phonk') || lower.includes('фонк')) genreScores['Фонк / Drift'] += 2;
+        else if (lower.includes('рэп') || lower.includes('rap') || lower.includes('хип')) genreScores['Рэп / Хип-Хоп'] += 2;
+        else if (lower.includes('рок') || lower.includes('rock')) genreScores['Рок / Альтернатива'] += 2;
+        else if (lower.includes('lofi') || lower.includes('chill')) genreScores['Chill / Lo-Fi'] += 2;
+        else genreScores['Поп / Тренды'] += 1;
+    });
+
+    const topArtists = Object.entries(artistScores)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 8)
+        .map(entry => entry[0]);
+
+    const totalScore = Object.values(genreScores).reduce((a, b) => a + b, 0) || 1;
+    const topGenres = Object.entries(genreScores)
+        .map(([name, score]) => ({ name, percent: Math.round((score / totalScore) * 100) }))
+        .sort((a, b) => b.percent - a.percent);
+
+    let disliked = [];
+    try {
+        disliked = JSON.parse(localStorage.getItem('dodospoti_disliked_ids') || '[]');
+    } catch (_) {}
+
+    return {
+        topArtists,
+        topGenres,
+        dislikedIds: disliked,
+        recentSearches: sHist.slice(0, 5)
+    };
+}
+
+function renderTasteAnalysisUI() {
+    const tasteTagsRow = document.getElementById('tasteTagsRow');
+    const tasteArtistsText = document.getElementById('tasteArtistsText');
+    const tasteStatusText = document.getElementById('tasteStatusText');
+    if (!tasteTagsRow) return;
+
+    const profile = getUserTasteProfile();
+    const activeGenres = profile.topGenres.filter(g => g.percent > 0).slice(0, 3);
+
+    if (activeGenres.length === 0) {
+        tasteTagsRow.innerHTML = `
+            <span class="taste-tag highlight">⚡ AI Taste Profiler</span>
+            <span class="taste-tag">Слушайте треки, чтобы система обучилась вашему вкусу</span>
+        `;
+        if (tasteArtistsText) {
+            tasteArtistsText.textContent = 'Умная волна адаптируется под каждый прослушанный трек и генерирует рандом без повторов.';
+        }
+    } else {
+        tasteTagsRow.innerHTML = activeGenres.map(g => `
+            <span class="taste-tag ${g.percent >= 25 ? 'highlight' : ''}">
+                ${g.name} (${g.percent}%)
+            </span>
+        `).join('');
+
+        if (tasteArtistsText) {
+            const favStr = profile.topArtists.length > 0
+                ? `Любимые артисты в ротации: ${profile.topArtists.slice(0, 5).join(', ')}`
+                : 'Поток строится на основе ваших лайков и прослушиваний';
+            tasteArtistsText.textContent = favStr;
+        }
+    }
+}
+
+async function fetchTasteWaveForTrack(seedTrack) {
+    if (!seedTrack) return;
+    const tasteProfile = getUserTasteProfile();
+
+    if (smartWaveBanner) {
+        smartWaveBanner.style.display = 'inline-flex';
+        smartWaveStatusText.textContent = `Умная волна: анализируем вкус под «${decodeHtml(seedTrack.title)}»...`;
+    }
+
+    try {
+        const res = await fetch('/api/taste-wave', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                seedTrack: {
+                    id: seedTrack.id,
+                    title: seedTrack.title,
+                    artist: seedTrack.artist,
+                    source: seedTrack.source
+                },
+                tasteProfile
+            })
+        });
+
+        if (!res.ok) throw new Error('Ошибка генерации taste-wave');
+        const data = await res.json();
+        const tasteTracks = data.tracks || [];
+
+        if (tasteTracks.length > 0) {
+            waveQueue = tasteTracks;
+            currentQueue = [seedTrack].concat(tasteTracks);
+            renderWaveQueueView();
+            renderTasteAnalysisUI();
+
+            if (waveTitle) {
+                waveTitle.textContent = `Моя Волна: в стиле «${decodeHtml(seedTrack.title)}»`;
+            }
+            if (waveDesc) {
+                waveDesc.textContent = `Персонализированный автомикс: подобрано ${tasteTracks.length} треков с учётом ваших любимых артистов и стилей.`;
+            }
+            if (smartWaveBanner) {
+                smartWaveStatusText.textContent = `Умная волна активна • В очереди: +${tasteTracks.length} треков по вкусу`;
+            }
+        }
+    } catch (err) {
+        console.warn('Ошибка taste-wave, резервный подбор:', err);
+        fetchRelatedTracksForCurrent(seedTrack, true);
+    }
+}
+
 // Поиск музыки (полные треки)
 async function searchMusic(query) {
     if (!query?.trim()) return;
+    saveSearchHistoryQuery(query);
     searchBtn.disabled = true;
     searchBtn.textContent = 'Поиск...';
     resultsHeading.textContent = query;
@@ -464,10 +746,10 @@ function decodeHtml(html) {
 }
 
 // Отрисовка карточек песен
-function renderTracksGrid(container, list) {
+function renderTracksGrid(container, list, options = {}) {
     container.innerHTML = '';
     if (!list || list.length === 0) {
-        container.innerHTML = `<div class="empty-state">Песни не найдены. Введите название трека или артиста в поиске выше.</div>`;
+        container.innerHTML = `<div class="empty-state">${options.isWaveView ? 'Очередь волны свободна' : 'Песни не найдены. Введите название трека или артиста в поиске выше.'}</div>`;
         return;
     }
 
@@ -487,12 +769,30 @@ function renderTracksGrid(container, list) {
             ? '<span class="platform-pill-badge spotify" style="position:absolute; top:8px; left:8px; z-index:3; font-size:10px; padding:3px 7px; border-radius:6px; background:#1ed760; color:#000; font-weight:800; box-shadow:0 2px 8px rgba(30,215,96,0.5);">Spotify</span>'
             : (track.source === 'audius' ? '<span class="platform-pill-badge audius" style="position:absolute; top:8px; left:8px; z-index:3; font-size:10px; padding:3px 7px; border-radius:6px; background:#cc33ff; color:#fff; font-weight:800;">Audius</span>' : '');
 
+        const removeBtnHtml = options.isWaveView
+            ? `<button class="card-remove-btn" title="Удалить из волны">
+                   <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.2" fill="none">
+                       <line x1="18" y1="6" x2="6" y2="18"></line>
+                       <line x1="6" y1="6" x2="18" y2="18"></line>
+                   </svg>
+               </button>`
+            : '';
+
         card.innerHTML = `
             <div class="cover-wrapper">
                 <img src="${track.thumbnail}" alt="${cleanTitle}" loading="lazy" draggable="false" />
                 ${platformBadge}
                 ${durationText ? `<span class="duration-badge">${durationText}</span>` : ''}
                 <div class="play-overlay">${isCurrent && isPlaying ? SVG_PAUSE : SVG_PLAY}</div>
+                ${removeBtnHtml}
+                <button class="card-lyrics-btn" title="Текст песни и караоке">
+                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.2" fill="none">
+                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                        <line x1="12" y1="19" x2="12" y2="23"></line>
+                        <line x1="8" y1="23" x2="16" y2="23"></line>
+                    </svg>
+                </button>
                 <button class="card-radio-btn" title="Запустить волну по этой песне">
                     <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.2" fill="none">
                         <path d="M2 12h2M6 8v8M10 4v16M14 7v10M18 10v4M22 12h-2"/>
@@ -513,6 +813,22 @@ function renderTracksGrid(container, list) {
             likeBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 toggleTrackLike(track);
+            });
+        }
+
+        const removeBtn = card.querySelector('.card-remove-btn');
+        if (removeBtn) {
+            removeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                removeTrackFromWave(track.id);
+            });
+        }
+
+        const cardLyricsBtn = card.querySelector('.card-lyrics-btn');
+        if (cardLyricsBtn) {
+            cardLyricsBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openLyricsForTrack(track);
             });
         }
 
@@ -541,12 +857,41 @@ function renderTracksGrid(container, list) {
                 }
                 return;
             }
-            currentQueue = list;
-            playTrackAtIndex(idx);
+            if (options.isWaveView) {
+                // В очереди волны - переключаемся на этот трек и оставляем следующие в волне
+                const foundIndex = currentQueue.findIndex(t => t.id === track.id);
+                if (foundIndex >= 0) {
+                    playTrackAtIndex(foundIndex);
+                } else {
+                    currentQueue.splice(currentIndex + 1, 0, track);
+                    playTrackAtIndex(currentIndex + 1);
+                }
+            } else {
+                currentQueue = list;
+                playTrackAtIndex(idx);
+            }
         });
 
         container.appendChild(card);
     });
+}
+
+// Удаление песни из Моей волны
+function removeTrackFromWave(trackId) {
+    const track = waveQueue.find(t => t.id === trackId) || currentQueue.find(t => t.id === trackId);
+    const trackName = track ? decodeHtml(track.title) : 'Песня';
+
+    waveQueue = waveQueue.filter(t => t.id !== trackId);
+
+    if (currentIndex >= 0 && currentIndex < currentQueue.length) {
+        const nextPart = currentQueue.slice(currentIndex + 1).filter(t => t.id !== trackId);
+        currentQueue = currentQueue.slice(0, currentIndex + 1).concat(nextPart);
+    } else {
+        currentQueue = currentQueue.filter(t => t.id !== trackId);
+    }
+
+    renderWaveQueueView();
+    showSystemNotification('Моя волна', `Трек «${trackName}» удалён из волны`, 'info');
 }
 
 /**
@@ -633,7 +978,7 @@ function renderWaveQueueView() {
         if (waveQueueSub) {
             waveQueueSub.textContent = `В очереди волны: ${waveQueue.length} треков`;
         }
-        renderTracksGrid(waveTracksContainer, waveQueue);
+        renderTracksGrid(waveTracksContainer, waveQueue, { isWaveView: true });
     } else {
         if (waveQueueSub) {
             waveQueueSub.textContent = 'Очередь свободна';
@@ -643,8 +988,7 @@ function renderWaveQueueView() {
                 <div style="font-size: 46px; margin-bottom: 12px;">🌊</div>
                 <h3 style="font-size: 19px; margin-bottom: 8px; color: #fff; font-weight: 700;">Очередь волны свободна</h3>
                 <p style="color: #a7a7a7; max-width: 440px; margin: 0 auto 20px; font-size: 14px; line-height: 1.5;">
-                    Здесь будут появляться похожие композиции, только когда играет ваша «Моя волна».<br>
-                    Включите любимый трек или нажмите кнопку ниже, чтобы запустить бесконечный поток!
+                    Введите название песни или жанра в поиск выше, либо нажмите кнопку ниже, чтобы запустить бесконечный поток музыки!
                 </p>
                 <button id="waveStartEmptyBtn" class="primary-btn" style="margin: 0 auto; display: inline-flex;">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
@@ -666,7 +1010,7 @@ function startSmartWaveFromTrack(track) {
     waveQueue = [];
     playTrackAtIndex(0);
     renderWaveQueueView();
-    fetchRelatedTracksForCurrent(track, true);
+    fetchTasteWaveForTrack(track);
     const waveTabBtn = document.querySelector('[data-tab="wave"]');
     if (waveTabBtn) waveTabBtn.click();
 }
@@ -696,6 +1040,12 @@ async function playTrackAtIndex(index) {
     updateLikeButtonState(track.id);
     addToHistory(track);
     highlightActiveCards();
+
+    if (lyricsModal?.classList.contains('visible')) {
+        openLyricsForTrack(track);
+    } else {
+        updateLyricsPlaySyncButtonState();
+    }
 
     // Системный медиа-оверлей Windows SMTC и медиа-клавиши
     if ('mediaSession' in navigator) {
@@ -778,22 +1128,22 @@ function playNext() {
     if (isShuffle) {
         // Умный рандом: если играем вперемешку и осталось мало треков, пополняем очередь
         if (currentIndex >= currentQueue.length - 4 && isAutoWave) {
-            fetchRelatedTracksForCurrent(currentQueue[currentIndex], true);
+            fetchTasteWaveForTrack(currentQueue[currentIndex]);
         }
         const nextIdx = Math.floor(Math.random() * currentQueue.length);
         playTrackAtIndex(nextIdx);
     } else {
         const nextIdx = currentIndex + 1;
         if (nextIdx < currentQueue.length) {
-            // Если подходим к концу очереди, заранее подгружаем следующую пачку похожих треков
+            // Если подходим к концу очереди, заранее подгружаем следующую пачку треков по вкусу
             if (nextIdx >= currentQueue.length - 3 && isAutoWave) {
-                fetchRelatedTracksForCurrent(currentQueue[nextIdx], true);
+                fetchTasteWaveForTrack(currentQueue[nextIdx]);
             }
             playTrackAtIndex(nextIdx);
         } else if (isAutoWave) {
             // Достигли последнего трека, запрашиваем ещё и бесшовно продолжаем
             const currentTrack = currentQueue[currentIndex];
-            fetchRelatedTracksForCurrent(currentTrack, true).then(() => {
+            fetchTasteWaveForTrack(currentTrack).then(() => {
                 if (currentIndex + 1 < currentQueue.length) {
                     playTrackAtIndex(currentIndex + 1);
                 } else {
@@ -1005,6 +1355,161 @@ if (clearWaveBtn) {
     });
 }
 
+// Поиск и быстрый запуск в Моей волне
+const waveSearchInput = document.getElementById('waveSearchInput');
+const waveSearchClearBtn = document.getElementById('waveSearchClearBtn');
+const waveSearchBtn = document.getElementById('waveSearchBtn');
+
+async function startWaveFromSearchQuery(query) {
+    if (!query || !query.trim()) return;
+    const cleanQ = query.trim();
+    saveSearchHistoryQuery(cleanQ);
+    showSystemNotification('Моя волна', `Поиск трека: «${cleanQ}»...`, 'info');
+
+    try {
+        const res = await fetch('/api/search-music', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: cleanQ })
+        });
+        const data = await res.json();
+        const tracks = Array.isArray(data) ? data : (data.tracks || []);
+
+        if (tracks.length > 0) {
+            const first = tracks[0];
+            // Включаем песню пользователя
+            currentQueue = [first];
+            currentIndex = 0;
+            playTrackAtIndex(0);
+
+            // А дальше генерируем настоящий умный рандом по вкусу (а не остальные результаты поиска!)
+            fetchTasteWaveForTrack(first);
+
+            const waveTabBtn = document.querySelector('[data-tab="wave"]');
+            if (waveTabBtn) waveTabBtn.click();
+            showSystemNotification('Моя волна', `Волна запущена! Играет «${decodeHtml(first.title)}»`, 'play');
+        } else {
+            showSystemNotification('Моя волна', `Ничего не найдено по запросу «${cleanQ}»`, 'warn');
+        }
+    } catch (err) {
+        console.error('Ошибка запуска волны по поиску:', err);
+        showSystemNotification('Моя волна', 'Ошибка сети при поиске треков', 'warn');
+    }
+}
+
+if (waveSearchInput) {
+    waveSearchInput.addEventListener('input', () => {
+        if (waveSearchClearBtn) {
+            waveSearchClearBtn.style.display = waveSearchInput.value ? 'block' : 'none';
+        }
+    });
+
+    waveSearchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            startWaveFromSearchQuery(waveSearchInput.value.trim());
+        }
+    });
+}
+
+if (waveSearchClearBtn) {
+    waveSearchClearBtn.addEventListener('click', () => {
+        waveSearchInput.value = '';
+        waveSearchClearBtn.style.display = 'none';
+        waveSearchInput.focus();
+    });
+}
+
+if (waveSearchBtn) {
+    waveSearchBtn.addEventListener('click', () => {
+        if (waveSearchInput && waveSearchInput.value.trim()) {
+            startWaveFromSearchQuery(waveSearchInput.value.trim());
+        } else {
+            if (startSmartWaveBtn) startSmartWaveBtn.click();
+        }
+    });
+}
+
+// Быстрые жанровые кнопки в Моей волне
+document.querySelectorAll('.wave-chip-btn').forEach((chip) => {
+    chip.addEventListener('click', () => {
+        const seed = chip.dataset.seed;
+        if (seed) {
+            if (waveSearchInput) {
+                waveSearchInput.value = seed;
+                if (waveSearchClearBtn) waveSearchClearBtn.style.display = 'block';
+            }
+            startWaveFromSearchQuery(seed);
+        }
+    });
+});
+
+// ==========================================
+// ИНИЦИАЛИЗАЦИЯ ВЫПАДАЮЩЕЙ ИСТОРИИ ПОИСКА
+// ==========================================
+const searchHistoryDropdown = document.getElementById('searchHistoryDropdown');
+const searchHistoryList = document.getElementById('searchHistoryList');
+const clearAllSearchHistoryBtn = document.getElementById('clearAllSearchHistoryBtn');
+
+const waveSearchHistoryDropdown = document.getElementById('waveSearchHistoryDropdown');
+const waveSearchHistoryList = document.getElementById('waveSearchHistoryList');
+const clearAllWaveHistoryBtn = document.getElementById('clearAllWaveHistoryBtn');
+
+if (searchInput) {
+    searchInput.addEventListener('focus', () => {
+        renderSearchHistoryDropdown(searchHistoryDropdown, searchHistoryList, searchInput, (q) => {
+            searchMusic(q);
+        });
+    });
+    searchInput.addEventListener('click', () => {
+        renderSearchHistoryDropdown(searchHistoryDropdown, searchHistoryList, searchInput, (q) => {
+            searchMusic(q);
+        });
+    });
+}
+
+if (clearAllSearchHistoryBtn) {
+    clearAllSearchHistoryBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        clearAllSearchHistory();
+        if (searchHistoryDropdown) searchHistoryDropdown.style.display = 'none';
+        showSystemNotification('Поиск', 'Вся история поиска очищена', 'info');
+    });
+}
+
+if (waveSearchInput) {
+    waveSearchInput.addEventListener('focus', () => {
+        renderSearchHistoryDropdown(waveSearchHistoryDropdown, waveSearchHistoryList, waveSearchInput, (q) => {
+            startWaveFromSearchQuery(q);
+        });
+    });
+    waveSearchInput.addEventListener('click', () => {
+        renderSearchHistoryDropdown(waveSearchHistoryDropdown, waveSearchHistoryList, waveSearchInput, (q) => {
+            startWaveFromSearchQuery(q);
+        });
+    });
+}
+
+if (clearAllWaveHistoryBtn) {
+    clearAllWaveHistoryBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        clearAllSearchHistory();
+        if (waveSearchHistoryDropdown) waveSearchHistoryDropdown.style.display = 'none';
+        showSystemNotification('Моя волна', 'История запросов волны очищена', 'info');
+    });
+}
+
+document.addEventListener('click', (e) => {
+    const sForm = document.getElementById('searchForm');
+    const wBox = document.querySelector('.wave-search-box');
+
+    if (searchHistoryDropdown && !sForm?.contains(e.target)) {
+        searchHistoryDropdown.style.display = 'none';
+    }
+    if (waveSearchHistoryDropdown && !wBox?.contains(e.target)) {
+        waveSearchHistoryDropdown.style.display = 'none';
+    }
+});
+
 shuffleBtn.addEventListener('click', () => {
     isShuffle = !isShuffle;
     shuffleBtn.classList.toggle('active', isShuffle);
@@ -1142,6 +1647,7 @@ document.querySelectorAll('.nav-item').forEach((btn) => {
 
         if (btn.dataset.tab === 'wave') {
             renderWaveQueueView();
+            renderTasteAnalysisUI();
         }
     });
 });
@@ -1150,12 +1656,14 @@ document.querySelectorAll('.mood-card').forEach((card) => {
     card.addEventListener('click', () => {
         const q = card.dataset.chart;
         searchInput.value = q;
+        if (searchHistoryDropdown) searchHistoryDropdown.style.display = 'none';
         searchMusic(q);
     });
 });
 
 searchForm.addEventListener('submit', (e) => {
     e.preventDefault();
+    if (searchHistoryDropdown) searchHistoryDropdown.style.display = 'none';
     document.querySelector('[data-tab="discover"]')?.click();
     searchMusic(searchInput.value);
 });
@@ -1675,6 +2183,331 @@ async function loadHomeFeed() {
     searchMusic('KME Джентльмены');
 }
 
+// ==========================================
+// КАРАОКЕ И СИНХРОНИЗИРОВАННЫЙ ТЕКСТ ПЕСЕН (LYRICS ENGINE)
+// ==========================================
+let currentLyricsTrack = null;
+let currentLyricsData = null;
+let lyricsAutoScrollEnabled = true;
+const lyricsCache = new Map();
+
+const lyricsModal = document.getElementById('lyricsModal');
+const lyricsAmbientGlow = document.getElementById('lyricsAmbientGlow');
+const lyricsTrackCover = document.getElementById('lyricsTrackCover');
+const lyricsTrackTitle = document.getElementById('lyricsTrackTitle');
+const lyricsTrackArtist = document.getElementById('lyricsTrackArtist');
+const lyricsStatusBadge = document.getElementById('lyricsStatusBadge');
+const lyricsStatusBadgeText = document.getElementById('lyricsStatusBadgeText');
+const lyricsPlaySyncBtn = document.getElementById('lyricsPlaySyncBtn');
+const lyricsPlaySyncText = document.getElementById('lyricsPlaySyncText');
+const lyricsAutoscrollToggle = document.getElementById('lyricsAutoscrollToggle');
+const lyricsAutoscrollText = document.getElementById('lyricsAutoscrollText');
+const closeLyricsModalBtn = document.getElementById('closeLyricsModalBtn');
+const lyricsBodyWrap = document.getElementById('lyricsBodyWrap');
+const lyricsLoading = document.getElementById('lyricsLoading');
+const lyricsEmpty = document.getElementById('lyricsEmpty');
+const lyricsLinesContainer = document.getElementById('lyricsLinesContainer');
+const lyricsPlainContainer = document.getElementById('lyricsPlainContainer');
+const lyricsBtn = document.getElementById('lyricsBtn');
+const playerTrackInfo = document.getElementById('playerTrackInfo');
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function formatSecondsToTime(sec) {
+    const s = Math.max(0, Math.floor(sec || 0));
+    const m = Math.floor(s / 60);
+    const rem = s % 60;
+    return `${m}:${rem < 10 ? '0' : ''}${rem}`;
+}
+
+async function openLyricsForTrack(track) {
+    if (!track) return;
+    currentLyricsTrack = track;
+    const lang = userSettings?.language || 'ru';
+    const dict = I18N[lang] || I18N.ru;
+
+    lyricsModal?.classList.add('visible');
+
+    if (lyricsTrackCover) lyricsTrackCover.src = track.thumbnail || '/icon.png';
+    if (lyricsTrackTitle) lyricsTrackTitle.textContent = decodeHtml(track.title || 'Песня');
+    if (lyricsTrackArtist) lyricsTrackArtist.textContent = decodeHtml(track.artist || 'DodoSpoti');
+    if (lyricsAmbientGlow) lyricsAmbientGlow.style.backgroundImage = `url('${track.thumbnail || '/icon.png'}')`;
+
+    updateLyricsPlaySyncButtonState();
+
+    if (lyricsLoading) lyricsLoading.style.display = 'block';
+    if (lyricsEmpty) lyricsEmpty.style.display = 'none';
+    if (lyricsLinesContainer) {
+        lyricsLinesContainer.style.display = 'none';
+        lyricsLinesContainer.innerHTML = '';
+    }
+    if (lyricsPlainContainer) {
+        lyricsPlainContainer.style.display = 'none';
+        lyricsPlainContainer.innerHTML = '';
+    }
+
+    const cacheKey = `${track.title}:::${track.artist}`;
+    if (lyricsCache.has(cacheKey)) {
+        currentLyricsData = lyricsCache.get(cacheKey);
+        renderLyricsData(currentLyricsData);
+        return;
+    }
+
+    try {
+        const queryParams = new URLSearchParams({
+            title: track.title || '',
+            artist: track.artist || '',
+            duration: track.durationSec || 0
+        });
+
+        const res = await fetch(`/api/lyrics?${queryParams.toString()}`);
+        if (!res.ok) throw new Error('Ошибка связи с сервером текстов');
+        const data = await res.json();
+        currentLyricsData = data;
+        lyricsCache.set(cacheKey, data);
+        renderLyricsData(data);
+    } catch (err) {
+        console.error('Ошибка загрузки текста:', err);
+        if (lyricsLoading) lyricsLoading.style.display = 'none';
+        if (lyricsEmpty) lyricsEmpty.style.display = 'block';
+    }
+}
+
+function updateLyricsPlaySyncButtonState() {
+    const active = currentQueue[currentIndex];
+    const isThisTrackActive = active && currentLyricsTrack && active.id === currentLyricsTrack.id;
+    const lang = userSettings?.language || 'ru';
+    const dict = I18N[lang] || I18N.ru;
+
+    if (lyricsPlaySyncBtn) {
+        if (isThisTrackActive) {
+            lyricsPlaySyncBtn.style.display = isPlaying ? 'none' : 'inline-flex';
+            if (lyricsPlaySyncText) lyricsPlaySyncText.textContent = isPlaying ? 'Играет' : 'Продолжить играть';
+        } else {
+            lyricsPlaySyncBtn.style.display = 'inline-flex';
+            if (lyricsPlaySyncText) lyricsPlaySyncText.textContent = dict.lyrics_play_sync || 'Слушать с текстом';
+        }
+    }
+}
+
+function renderLyricsData(data) {
+    if (lyricsLoading) lyricsLoading.style.display = 'none';
+    const lang = userSettings?.language || 'ru';
+    const dict = I18N[lang] || I18N.ru;
+
+    if (!data || !data.found || (!data.synced && !data.plainLyrics)) {
+        if (lyricsEmpty) lyricsEmpty.style.display = 'block';
+        if (lyricsStatusBadge) lyricsStatusBadge.style.display = 'none';
+        return;
+    }
+
+    if (data.synced && Array.isArray(data.lines) && data.lines.length > 0) {
+        if (lyricsStatusBadge) {
+            lyricsStatusBadge.style.display = 'inline-flex';
+            lyricsStatusBadge.className = 'lyrics-badge synced';
+        }
+        if (lyricsStatusBadgeText) lyricsStatusBadgeText.textContent = dict.lyrics_status_synced || 'Караоке синхронизация';
+        if (lyricsLinesContainer) {
+            lyricsLinesContainer.style.display = 'flex';
+            lyricsLinesContainer.innerHTML = '';
+
+            data.lines.forEach((line, idx) => {
+                const lineEl = document.createElement('div');
+                lineEl.className = 'lyric-line';
+                lineEl.dataset.time = line.time;
+                lineEl.dataset.idx = idx;
+
+                const timeStr = formatSecondsToTime(line.time);
+                lineEl.innerHTML = `
+                    <span class="lyric-timestamp">${timeStr}</span>
+                    <span class="lyric-text">${escapeHtml(line.text)}</span>
+                    <span class="lyric-jump-icon">▶</span>
+                `;
+
+                lineEl.addEventListener('click', () => {
+                    handleLyricLineClick(line.time);
+                });
+
+                lyricsLinesContainer.appendChild(lineEl);
+            });
+        }
+
+        syncLyricsWithTime(audioPlayer?.currentTime || 0);
+    } else if (data.plainLyrics) {
+        if (lyricsStatusBadge) {
+            lyricsStatusBadge.style.display = 'inline-flex';
+            lyricsStatusBadge.className = 'lyrics-badge plain';
+        }
+        if (lyricsStatusBadgeText) lyricsStatusBadgeText.textContent = dict.lyrics_status_plain || 'Текст песни';
+        if (lyricsPlainContainer) {
+            lyricsPlainContainer.style.display = 'block';
+            lyricsPlainContainer.textContent = data.plainLyrics;
+        }
+    }
+}
+
+function handleLyricLineClick(targetTime) {
+    const active = currentQueue[currentIndex];
+    const isThisTrackActive = active && currentLyricsTrack && active.id === currentLyricsTrack.id;
+
+    if (!isThisTrackActive && currentLyricsTrack) {
+        const trackIdx = currentQueue.findIndex(t => t.id === currentLyricsTrack.id);
+        if (trackIdx !== -1) {
+            playTrackAtIndex(trackIdx);
+        } else {
+            currentQueue.splice(currentIndex + 1, 0, currentLyricsTrack);
+            playTrackAtIndex(currentIndex + 1);
+        }
+        setTimeout(() => {
+            if (audioPlayer) {
+                audioPlayer.currentTime = targetTime;
+                audioPlayer.play().catch(() => {});
+                syncPlayPauseUI();
+            }
+        }, 350);
+        return;
+    }
+
+    if (audioPlayer) {
+        audioPlayer.currentTime = targetTime;
+        if (audioPlayer.paused) {
+            audioPlayer.play().catch(() => {});
+            syncPlayPauseUI();
+        }
+    }
+    syncLyricsWithTime(targetTime);
+}
+
+function syncLyricsWithTime(currentTime) {
+    if (!lyricsModal?.classList.contains('visible')) return;
+    const active = currentQueue[currentIndex];
+    const isThisTrackActive = active && currentLyricsTrack && active.id === currentLyricsTrack.id;
+    if (!isThisTrackActive) return;
+
+    if (!currentLyricsData?.synced || !Array.isArray(currentLyricsData.lines)) return;
+
+    const lines = currentLyricsData.lines;
+    let activeIdx = -1;
+
+    for (let i = 0; i < lines.length; i++) {
+        if (currentTime >= lines[i].time) {
+            activeIdx = i;
+        } else {
+            break;
+        }
+    }
+
+    if (activeIdx === -1 && lines.length > 0) activeIdx = 0;
+
+    const allLineEls = lyricsLinesContainer?.querySelectorAll('.lyric-line');
+    if (!allLineEls || allLineEls.length === 0) return;
+
+    let targetEl = null;
+    allLineEls.forEach((el, idx) => {
+        if (idx === activeIdx) {
+            if (!el.classList.contains('active-line')) {
+                el.classList.add('active-line');
+            }
+            targetEl = el;
+        } else {
+            el.classList.remove('active-line');
+        }
+    });
+
+    if (targetEl && lyricsAutoScrollEnabled) {
+        targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+}
+
+function closeLyricsModal() {
+    lyricsModal?.classList.remove('visible');
+}
+
+closeLyricsModalBtn?.addEventListener('click', closeLyricsModal);
+lyricsModal?.addEventListener('click', (e) => {
+    if (e.target === lyricsModal) closeLyricsModal();
+});
+
+lyricsAutoscrollToggle?.addEventListener('click', () => {
+    lyricsAutoScrollEnabled = !lyricsAutoScrollEnabled;
+    const lang = userSettings?.language || 'ru';
+    const dict = I18N[lang] || I18N.ru;
+    lyricsAutoscrollToggle.classList.toggle('active', lyricsAutoScrollEnabled);
+    if (lyricsAutoscrollText) {
+        lyricsAutoscrollText.textContent = lyricsAutoScrollEnabled 
+            ? (dict.lyrics_autoscroll_on || 'Автопрокрутка: ВКЛ')
+            : (dict.lyrics_autoscroll_off || 'Автопрокрутка: ВЫКЛ');
+    }
+});
+
+lyricsPlaySyncBtn?.addEventListener('click', () => {
+    if (currentLyricsTrack) {
+        const active = currentQueue[currentIndex];
+        if (active && active.id === currentLyricsTrack.id) {
+            if (audioPlayer.paused) {
+                audioPlayer.play().catch(() => {});
+                syncPlayPauseUI();
+            }
+        } else {
+            const trackIdx = currentQueue.findIndex(t => t.id === currentLyricsTrack.id);
+            if (trackIdx !== -1) {
+                playTrackAtIndex(trackIdx);
+            } else {
+                currentQueue.splice(currentIndex + 1, 0, currentLyricsTrack);
+                playTrackAtIndex(currentIndex + 1);
+            }
+        }
+        updateLyricsPlaySyncButtonState();
+    }
+});
+
+playerTrackInfo?.addEventListener('click', (e) => {
+    if (e.target.closest('#likeCurrentBtn')) return;
+    const current = currentQueue[currentIndex];
+    if (current) {
+        openLyricsForTrack(current);
+    } else {
+        showSystemToast('DodoSpoti', 'Сначала включите трек для показа текста', 'info');
+    }
+});
+
+lyricsBtn?.addEventListener('click', () => {
+    const current = currentQueue[currentIndex];
+    if (current) {
+        if (lyricsModal?.classList.contains('visible') && currentLyricsTrack?.id === current.id) {
+            closeLyricsModal();
+        } else {
+            openLyricsForTrack(current);
+        }
+    } else {
+        showSystemToast('DodoSpoti', 'Включите трек, чтобы смотреть караоке и текст', 'info');
+    }
+});
+
+window.addEventListener('keydown', (e) => {
+    if (e.target.matches('input, textarea')) return;
+    if (e.key === 'Escape' && lyricsModal?.classList.contains('visible')) {
+        closeLyricsModal();
+        return;
+    }
+    if (e.key === 'l' || e.key === 'L' || e.key === 'д' || e.key === 'Д') {
+        if (lyricsModal?.classList.contains('visible')) {
+            closeLyricsModal();
+        } else {
+            const current = currentQueue[currentIndex];
+            if (current) openLyricsForTrack(current);
+        }
+    }
+});
+
 if (!localStorage.getItem('dodospoti_avatar_theme_v2')) {
     userSettings.wallpaper = 'aurora';
     userSettings.accentColor = '#1ed760';
@@ -1684,5 +2517,6 @@ if (!localStorage.getItem('dodospoti_avatar_theme_v2')) {
 applySettingsToDOM();
 requestAnimationFrame(renderLiveWallpaper);
 loadLibraryFromDisk();
+renderTasteAnalysisUI();
 loadHomeFeed();
 checkAppUpdates(false);

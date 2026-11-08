@@ -89,6 +89,14 @@
                         autocomplete="off"
                     />
                     <button type="submit" class="search-btn" id="searchBtn" data-i18n="search_btn">Найти</button>
+                    <!-- ВЫПАДАЮЩИЙ СПИСОК ИСТОРИИ ПОИСКА -->
+                    <div id="searchHistoryDropdown" class="search-history-dropdown" style="display: none;">
+                        <div class="search-history-header">
+                            <span data-i18n="search_history_title">История поиска</span>
+                            <button type="button" id="clearAllSearchHistoryBtn" class="clear-history-link" data-i18n="clear_history_btn">Очистить всё</button>
+                        </div>
+                        <div id="searchHistoryList" class="search-history-list"></div>
+                    </div>
                 </form>
 
                 <div class="topbar-actions">
@@ -154,8 +162,44 @@
                         </span>
                         <h2 id="waveTitle" data-i18n="wave_title">Моя Волна: Рандом по песням</h2>
                         <p id="waveDesc" data-i18n="wave_desc">
-                            Выберите любой трек (например, «девочка в каре» или «сайт»), а дальше плеер сам подберёт бесконечную цепочку похожих композиций, артистов и ритмов без остановки.
+                            Выберите любой трек (например, «девочка в каре» или «сайт») или воспользуйтесь поиском ниже, а плеер сам подберёт бесконечную цепочку похожих композиций, артистов и ритмов без остановки.
                         </p>
+
+                        <!-- ПОИСК ДЛЯ МОЕЙ ВОЛНЫ -->
+                        <div class="wave-search-container">
+                            <div class="wave-search-box">
+                                <svg class="wave-search-icon" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                </svg>
+                                <input type="text" id="waveSearchInput" placeholder="Искать трек или артиста для запуска волны..." autocomplete="off">
+                                <button id="waveSearchClearBtn" class="wave-search-clear" style="display:none;" title="Очистить">✕</button>
+                                <!-- ВЫПАДАЮЩИЙ СПИСОК ИСТОРИИ ВОЛНЫ -->
+                                <div id="waveSearchHistoryDropdown" class="search-history-dropdown wave-history-dropdown" style="display: none;">
+                                    <div class="search-history-header">
+                                        <span data-i18n="search_history_title">История поиска</span>
+                                        <button type="button" id="clearAllWaveHistoryBtn" class="clear-history-link" data-i18n="clear_history_btn">Очистить всё</button>
+                                    </div>
+                                    <div id="waveSearchHistoryList" class="search-history-list"></div>
+                                </div>
+                            </div>
+                            <button id="waveSearchBtn" class="primary-btn">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                                <span data-i18n="wave_search_start_btn">Найти и запустить</span>
+                            </button>
+                        </div>
+
+                        <!-- БЫСТРЫЕ ЖАНРЫ / НАСТРОЕНИЯ ВОЛНЫ -->
+                        <div class="wave-chips-row">
+                            <span class="wave-chips-label" data-i18n="wave_chips_label">Жанры волны:</span>
+                            <button class="wave-chip-btn" data-seed="Spotify Топ Хиты">🔥 Spotify Топ</button>
+                            <button class="wave-chip-btn" data-seed="Фонк Drift Phonk">🏎️ Фонк</button>
+                            <button class="wave-chip-btn" data-seed="Русский Рэп Хип-Хоп">🎧 Рэп & Хип-Хоп</button>
+                            <button class="wave-chip-btn" data-seed="Chill Lo-Fi beats">☕ Chill & Lo-Fi</button>
+                            <button class="wave-chip-btn" data-seed="Рок Хиты Rock">🎸 Рок</button>
+                            <button class="wave-chip-btn" data-seed="Поп Музыка Танцевальная">💃 Поп & Дэнс</button>
+                        </div>
+
                         <div class="wave-actions">
                             <button id="startSmartWaveBtn" class="primary-btn">
                                 <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
@@ -178,7 +222,7 @@
                 <div class="section-title-row">
                     <div>
                         <h3 id="waveQueueHeading" data-i18n="wave_queue_heading">В очереди волны</h3>
-                        <span class="results-subtitle" id="waveQueueSub" data-i18n="wave_queue_sub">Следующие похожие композиции</span>
+                        <span class="results-subtitle" id="waveQueueSub" data-i18n="wave_queue_sub">Следующие похожие композиции (нажмите ✕ на карточке, чтобы удалить трек)</span>
                     </div>
                     <button id="clearWaveBtn" class="secondary-btn" style="padding: 6px 14px; font-size: 13px;" title="Очистить очередь волны">
                         <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
@@ -421,7 +465,7 @@
 
     <!-- Нижняя панель плеера с векторными SVG-кнопками -->
     <footer class="player-bar">
-        <div class="player-track-info">
+        <div class="player-track-info" id="playerTrackInfo" title="Нажмите, чтобы открыть караоке и текст песни">
             <img
                 id="playerCover"
                 src="/icon.png"
@@ -488,6 +532,14 @@
         </div>
 
         <div class="player-volume">
+            <button id="lyricsBtn" class="ctrl-btn" title="Текст песни и караоке (L)">
+                <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
+                    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                    <line x1="12" y1="19" x2="12" y2="23"></line>
+                    <line x1="8" y1="23" x2="16" y2="23"></line>
+                </svg>
+            </button>
             <button id="downloadCurrentBtn" class="ctrl-btn" title="Скачать трек на компьютер">
                 <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -539,6 +591,69 @@
             <div class="legal-modal-footer">
                 <button id="closeLegalModalBottomBtn" class="primary-btn small-btn">Понятно</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Полноэкранный плеер текста песни и караоке (Lyrics & Karaoke View) -->
+    <div id="lyricsModal" class="lyrics-modal-backdrop">
+        <div class="lyrics-modal-card">
+            <div id="lyricsAmbientGlow" class="lyrics-ambient-glow"></div>
+            
+            <header class="lyrics-modal-header">
+                <div class="lyrics-track-info-header">
+                    <img id="lyricsTrackCover" src="/icon.png" alt="Cover" class="lyrics-header-cover" draggable="false" />
+                    <div class="lyrics-meta-col">
+                        <div class="lyrics-title-row">
+                            <h2 id="lyricsTrackTitle" class="lyrics-title">Текст песни</h2>
+                            <span id="lyricsStatusBadge" class="lyrics-badge synced">
+                                <span class="pulse-indicator"></span>
+                                <span id="lyricsStatusBadgeText">Караоке синхронизация</span>
+                            </span>
+                        </div>
+                        <p id="lyricsTrackArtist" class="lyrics-artist">Исполнитель</p>
+                    </div>
+                </div>
+
+                <div class="lyrics-header-actions">
+                    <button id="lyricsPlaySyncBtn" class="lyrics-header-btn primary" title="Включить этот трек и синхронизировать">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                        <span id="lyricsPlaySyncText">Слушать с текстом</span>
+                    </button>
+                    <button id="lyricsAutoscrollToggle" class="lyrics-header-btn active" title="Автоматическая прокрутка текста вместе с музыкой">
+                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
+                            <polyline points="7 13 12 18 17 13"></polyline>
+                            <polyline points="7 6 12 11 17 6"></polyline>
+                        </svg>
+                        <span id="lyricsAutoscrollText">Автопрокрутка: ВКЛ</span>
+                    </button>
+                    <button id="closeLyricsModalBtn" class="lyrics-modal-close" title="Закрыть (Esc)">✕</button>
+                </div>
+            </header>
+
+            <div class="lyrics-modal-body" id="lyricsBodyWrap">
+                <!-- Состояние загрузки -->
+                <div id="lyricsLoading" class="lyrics-status-view">
+                    <div class="lyrics-spinner"></div>
+                    <p class="lyrics-status-text" id="lyricsLoadingText">Поиск синхронизированного текста песни...</p>
+                </div>
+
+                <!-- Состояние: текст не найден -->
+                <div id="lyricsEmpty" class="lyrics-status-view" style="display: none;">
+                    <div class="lyrics-status-icon">🎤</div>
+                    <h3 id="lyricsEmptyTitle">Текст песни пока не найден</h3>
+                    <p id="lyricsEmptyDesc">Для данного трека текст в базе пока отсутствует. Вы можете продолжать слушать песню дальше.</p>
+                </div>
+
+                <!-- Контейнер синхронизированных строчек караоке -->
+                <div id="lyricsLinesContainer" class="lyrics-lines-container" style="display: none;"></div>
+
+                <!-- Контейнер обычного (статического) текста песни -->
+                <div id="lyricsPlainContainer" class="lyrics-plain-container" style="display: none;"></div>
+            </div>
+
+            <footer class="lyrics-modal-footer">
+                <span class="lyrics-footer-hint" id="lyricsFooterHint">💡 Нажмите на любую строчку текста, чтобы перейти к этому моменту в песне</span>
+            </footer>
         </div>
     </div>
 
