@@ -497,6 +497,127 @@ async function getSpotifyPlaylistTracks(playlistId = '37i9dQZF1DXcBWIGoYBM5M') {
     }
 }
 
+/**
+ * Парсер LRC текста с таймкодами [mm:ss.xx]
+ */
+function parseLrc(lrcString) {
+    if (!lrcString || typeof lrcString !== 'string') return [];
+    const lines = lrcString.split(/\r?\n/);
+    const parsed = [];
+    const timeRegex = /\[(\d{1,2}):(\d{2})(?:\.(\d{1,3}))?\]/g;
+
+    for (const rawLine of lines) {
+        const trimmed = rawLine.trim();
+        if (!trimmed) continue;
+        if (/^\[(ti|ar|al|au|by|offset|length|re|ve):/i.test(trimmed)) continue;
+
+        const times = [];
+        let match;
+        timeRegex.lastIndex = 0;
+        while ((match = timeRegex.exec(trimmed)) !== null) {
+            const minutes = parseInt(match[1], 10);
+            const seconds = parseInt(match[2], 10);
+            const msStr = (match[3] || '0').padEnd(3, '0').slice(0, 3);
+            const ms = parseInt(msStr, 10);
+            times.push(minutes * 60 + seconds + ms / 1000);
+        }
+
+        const text = trimmed.replace(timeRegex, '').trim();
+        if (times.length > 0) {
+            for (const time of times) {
+                parsed.push({ time, text });
+            }
+        }
+    }
+
+    parsed.sort((a, b) => a.time - b.time);
+    return parsed;
+}
+
+/**
+ * Поиск синхронизированного или обычного текста песни
+ */
+async function fetchTrackLyrics(title = '', artist = '', duration = 0) {
+    const cleanTitle = (title || '')
+        .replace(/\(.*?\)/g, '')
+        .replace(/\[.*?\]/g, '')
+        .replace(/feat\..*$/i, '')
+        .replace(/ft\..*$/i, '')
+        .trim();
+    const cleanArtist = (artist || '')
+        .replace(/\(.*?\)/g, '')
+        .replace(/feat\..*$/i, '')
+        .replace(/ft\..*$/i, '')
+        .trim();
+
+    if (cleanTitle && cleanArtist) {
+        try {
+            let getUrl = `https://lrclib.net/api/get?track_name=${encodeURIComponent(cleanTitle)}&artist_name=${encodeURIComponent(cleanArtist)}`;
+            if (duration > 0) getUrl += `&duration=${Math.round(duration)}`;
+            const res = await fetch(getUrl, {
+                headers: { 'User-Agent': 'DodoSpoti/1.2 (https://github.com/redmi157312/DodoSpoti)' },
+                signal: AbortSignal.timeout(6000)
+            });
+            if (res.ok) {
+                const data = await res.json();
+                if (data.syncedLyrics) {
+                    return {
+                        found: true,
+                        synced: true,
+                        lines: parseLrc(data.syncedLyrics),
+                        plainLyrics: data.plainLyrics || '',
+                        trackName: data.name,
+                        artistName: data.artistName
+                    };
+                } else if (data.plainLyrics) {
+                    return {
+                        found: true,
+                        synced: false,
+                        lines: [],
+                        plainLyrics: data.plainLyrics,
+                        trackName: data.name,
+                        artistName: data.artistName
+                    };
+                }
+            }
+        } catch (_) {}
+    }
+
+    const searchQueries = [
+        `${cleanArtist} ${cleanTitle}`.trim(),
+        cleanTitle,
+        `${cleanTitle} ${cleanArtist}`.trim()
+    ].filter(Boolean);
+
+    for (const q of searchQueries) {
+        try {
+            const searchUrl = `https://lrclib.net/api/search?q=${encodeURIComponent(q)}`;
+            const res = await fetch(searchUrl, {
+                headers: { 'User-Agent': 'DodoSpoti/1.2 (https://github.com/redmi157312/DodoSpoti)' },
+                signal: AbortSignal.timeout(6000)
+            });
+            if (res.ok) {
+                const list = await res.json();
+                if (Array.isArray(list) && list.length > 0) {
+                    const best = list.find(item => item.syncedLyrics) || list[0];
+                    if (best && (best.syncedLyrics || best.plainLyrics)) {
+                        return {
+                            found: true,
+                            synced: Boolean(best.syncedLyrics),
+                            lines: best.syncedLyrics ? parseLrc(best.syncedLyrics) : [],
+                            plainLyrics: best.plainLyrics || '',
+                            trackName: best.name,
+                            artistName: best.artistName
+                        };
+                    }
+                }
+            }
+        } catch (_) {}
+    }
+
+    return { found: false, synced: false, lines: [], plainLyrics: '' };
+}
+
 function startEmbeddedServer() {
     return new Promise((resolve, reject) => {
         const exp = express();
@@ -806,6 +927,20 @@ function startEmbeddedServer() {
                 return res.redirect(finalAudioUrl);
             } catch (err) {
                 return res.status(500).send(err.message);
+            }
+        });
+
+        exp.get('/api/lyrics', async (req, res) => {
+            const title = req.query.title || '';
+            const artist = req.query.artist || '';
+            const duration = parseFloat(req.query.duration || '0');
+
+            try {
+                const lyrics = await fetchTrackLyrics(title, artist, duration);
+                return res.json(lyrics);
+            } catch (err) {
+                console.error('Error fetching lyrics:', err);
+                return res.status(500).json({ error: err.message || 'Ошибка поиска текста' });
             }
         });
 

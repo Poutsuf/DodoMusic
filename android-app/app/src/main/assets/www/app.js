@@ -1544,11 +1544,13 @@ muteBtn.addEventListener('click', () => {
     muteBtn.classList.toggle('active', audioPlayer.muted);
 });
 
-// Клик по артисту в нижней панели плеера
+// Клик по артисту в нижней панели плеера (переход на страницу профиля артиста)
 if (playerArtist) {
-    playerArtist.addEventListener('click', () => {
+    playerArtist.addEventListener('click', (e) => {
+        e.stopPropagation();
         const track = currentQueue[currentIndex];
         if (track?.artist) {
+            closeLyricsModal();
             openArtistPage(track.artist);
         }
     });
@@ -2228,6 +2230,117 @@ function formatSecondsToTime(sec) {
     return `${m}:${rem < 10 ? '0' : ''}${rem}`;
 }
 
+function parseClientLrc(lrcString) {
+    if (!lrcString || typeof lrcString !== 'string') return [];
+    const lines = lrcString.split(/\r?\n/);
+    const parsed = [];
+    const timeRegex = /\[(\d{1,2}):(\d{2})(?:\.(\d{1,3}))?\]/g;
+
+    for (const rawLine of lines) {
+        const trimmed = rawLine.trim();
+        if (!trimmed) continue;
+        if (/^\[(ti|ar|al|au|by|offset|length|re|ve):/i.test(trimmed)) continue;
+
+        const times = [];
+        let match;
+        timeRegex.lastIndex = 0;
+        while ((match = timeRegex.exec(trimmed)) !== null) {
+            const minutes = parseInt(match[1], 10);
+            const seconds = parseInt(match[2], 10);
+            const msStr = (match[3] || '0').padEnd(3, '0').slice(0, 3);
+            const ms = parseInt(msStr, 10);
+            times.push(minutes * 60 + seconds + ms / 1000);
+        }
+
+        const text = trimmed.replace(timeRegex, '').trim();
+        if (times.length > 0) {
+            for (const time of times) {
+                parsed.push({ time, text });
+            }
+        }
+    }
+
+    parsed.sort((a, b) => a.time - b.time);
+    return parsed;
+}
+
+async function fetchLrclibDirectly(rawTitle = '', rawArtist = '', duration = 0) {
+    const cleanTitle = (rawTitle || '')
+        .replace(/\(.*?\)/g, '')
+        .replace(/\[.*?\]/g, '')
+        .replace(/feat\..*$/i, '')
+        .replace(/ft\..*$/i, '')
+        .trim();
+    const cleanArtist = (rawArtist || '')
+        .replace(/\(.*?\)/g, '')
+        .replace(/feat\..*$/i, '')
+        .replace(/ft\..*$/i, '')
+        .trim();
+
+    // 1. Точный запрос /api/get
+    if (cleanTitle && cleanArtist) {
+        try {
+            let getUrl = `https://lrclib.net/api/get?track_name=${encodeURIComponent(cleanTitle)}&artist_name=${encodeURIComponent(cleanArtist)}`;
+            if (duration > 0) getUrl += `&duration=${Math.round(duration)}`;
+            const res = await fetch(getUrl);
+            if (res.ok) {
+                const item = await res.json();
+                if (item.syncedLyrics) {
+                    return {
+                        found: true,
+                        synced: true,
+                        lines: parseClientLrc(item.syncedLyrics),
+                        plainLyrics: item.plainLyrics || '',
+                        trackName: item.name,
+                        artistName: item.artistName
+                    };
+                } else if (item.plainLyrics) {
+                    return {
+                        found: true,
+                        synced: false,
+                        lines: [],
+                        plainLyrics: item.plainLyrics,
+                        trackName: item.name,
+                        artistName: item.artistName
+                    };
+                }
+            }
+        } catch (_) {}
+    }
+
+    // 2. Поисковый запрос /api/search
+    const queries = [
+        `${cleanArtist} ${cleanTitle}`.trim(),
+        cleanTitle,
+        `${cleanTitle} ${cleanArtist}`.trim()
+    ].filter(Boolean);
+
+    for (const q of queries) {
+        try {
+            const searchUrl = `https://lrclib.net/api/search?q=${encodeURIComponent(q)}`;
+            const res = await fetch(searchUrl);
+            if (res.ok) {
+                const list = await res.json();
+                if (Array.isArray(list) && list.length > 0) {
+                    const best = list.find(item => item.syncedLyrics) || list[0];
+                    if (best && (best.syncedLyrics || best.plainLyrics)) {
+                        return {
+                            found: true,
+                            synced: Boolean(best.syncedLyrics),
+                            lines: best.syncedLyrics ? parseClientLrc(best.syncedLyrics) : [],
+                            plainLyrics: best.plainLyrics || '',
+                            trackName: best.name,
+                            artistName: best.artistName
+                        };
+                    }
+                }
+            }
+        } catch (_) {}
+    }
+
+    return { found: false, synced: false, lines: [], plainLyrics: '' };
+}
+
 async function openLyricsForTrack(track) {
     if (!track) return;
     currentLyricsTrack = track;
@@ -2242,6 +2355,9 @@ async function openLyricsForTrack(track) {
     if (lyricsAmbientGlow) lyricsAmbientGlow.style.backgroundImage = `url('${track.thumbnail || '/icon.png'}')`;
 
     updateLyricsPlaySyncButtonState();
+
+    // Скрываем бейдж караоке до момента пока текст реально не загрузится
+    if (lyricsStatusBadge) lyricsStatusBadge.style.display = 'none';
 
     if (lyricsLoading) lyricsLoading.style.display = 'block';
     if (lyricsEmpty) lyricsEmpty.style.display = 'none';
@@ -2261,23 +2377,44 @@ async function openLyricsForTrack(track) {
         return;
     }
 
+    let lyricsData = null;
+
+    // 1. Попытка запроса через встроенный бэкенд
     try {
         const queryParams = new URLSearchParams({
             title: track.title || '',
             artist: track.artist || '',
-            duration: track.durationSec || 0
+            duration: track.durationSeconds || track.durationSec || 0
         });
 
         const res = await fetch(`/api/lyrics?${queryParams.toString()}`);
-        if (!res.ok) throw new Error('Ошибка связи с сервером текстов');
-        const data = await res.json();
-        currentLyricsData = data;
-        lyricsCache.set(cacheKey, data);
-        renderLyricsData(data);
-    } catch (err) {
-        console.error('Ошибка загрузки текста:', err);
+        if (res.ok) {
+            const json = await res.json();
+            if (json && json.found && (json.synced || json.plainLyrics)) {
+                lyricsData = json;
+            }
+        }
+    } catch (_) {}
+
+    // 2. Прямой клиентский fallback на LRCLIB (если бэкенд не вернул текст, или в Android APK)
+    if (!lyricsData || !lyricsData.found) {
+        try {
+            lyricsData = await fetchLrclibDirectly(
+                track.title,
+                track.artist,
+                track.durationSeconds || track.durationSec || 0
+            );
+        } catch (_) {}
+    }
+
+    if (lyricsData && lyricsData.found && (lyricsData.synced || lyricsData.plainLyrics)) {
+        currentLyricsData = lyricsData;
+        lyricsCache.set(cacheKey, lyricsData);
+        renderLyricsData(lyricsData);
+    } else {
         if (lyricsLoading) lyricsLoading.style.display = 'none';
         if (lyricsEmpty) lyricsEmpty.style.display = 'block';
+        if (lyricsStatusBadge) lyricsStatusBadge.style.display = 'none';
     }
 }
 
@@ -2306,8 +2443,13 @@ function renderLyricsData(data) {
     if (!data || !data.found || (!data.synced && !data.plainLyrics)) {
         if (lyricsEmpty) lyricsEmpty.style.display = 'block';
         if (lyricsStatusBadge) lyricsStatusBadge.style.display = 'none';
+        if (lyricsLinesContainer) lyricsLinesContainer.style.display = 'none';
+        if (lyricsPlainContainer) lyricsPlainContainer.style.display = 'none';
         return;
     }
+
+    // Если текст найден - прячем заглушку пустого состояния
+    if (lyricsEmpty) lyricsEmpty.style.display = 'none';
 
     if (data.synced && Array.isArray(data.lines) && data.lines.length > 0) {
         if (lyricsStatusBadge) {
@@ -2315,6 +2457,7 @@ function renderLyricsData(data) {
             lyricsStatusBadge.className = 'lyrics-badge synced';
         }
         if (lyricsStatusBadgeText) lyricsStatusBadgeText.textContent = dict.lyrics_status_synced || 'Караоке синхронизация';
+        if (lyricsPlainContainer) lyricsPlainContainer.style.display = 'none';
         if (lyricsLinesContainer) {
             lyricsLinesContainer.style.display = 'flex';
             lyricsLinesContainer.innerHTML = '';
@@ -2470,12 +2613,22 @@ lyricsPlaySyncBtn?.addEventListener('click', () => {
 });
 
 playerTrackInfo?.addEventListener('click', (e) => {
-    if (e.target.closest('#likeCurrentBtn')) return;
+    if (e.target.closest('#likeCurrentBtn') || e.target.closest('#playerArtist')) return;
     const current = currentQueue[currentIndex];
     if (current) {
         openLyricsForTrack(current);
     } else {
         showSystemToast('DodoSpoti', 'Сначала включите трек для показа текста', 'info');
+    }
+});
+
+// Клик по имени артиста в шапке окна текста также открывает профиль артиста
+lyricsTrackArtist?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const track = currentLyricsTrack || currentQueue[currentIndex];
+    if (track?.artist) {
+        closeLyricsModal();
+        openArtistPage(track.artist);
     }
 });
 

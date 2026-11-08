@@ -2086,6 +2086,13 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 380px;
+    cursor: pointer;
+    transition: color 0.15s ease;
+}
+
+.lyrics-artist:hover {
+    color: var(--accent-color);
+    text-decoration: underline;
 }
 
 .lyrics-badge {

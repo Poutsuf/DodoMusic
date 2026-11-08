@@ -26,9 +26,14 @@ function copyFolderRecursive(source, target) {
 
 for (const target of targets) {
     console.log(`Syncing to ${target}...`);
-    // Copy server.js
     if (fs.existsSync(target)) {
+        // Copy server.js
         fs.copyFileSync(path.join(root, 'server.js'), path.join(target, 'server.js'));
+
+        // Copy electron-main.cjs if not android
+        if (!target.includes('assets\\www')) {
+            fs.copyFileSync(path.join(root, 'electron-main.cjs'), path.join(target, 'electron-main.cjs'));
+        }
         
         // For android, public files go directly into www
         if (target.includes('assets\\www')) {
