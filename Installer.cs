@@ -8,7 +8,7 @@ using System.Windows.Forms;
 using Microsoft.Win32;
 using System.Threading;
 
-namespace DodoSpotiInstaller
+namespace DodoMusicInstaller
 {
     static class Program
     {
@@ -30,8 +30,8 @@ namespace DodoSpotiInstaller
         static void RunUninstaller()
         {
             var res = MessageBox.Show(
-                "Вы уверены, что хотите полностью удалить DodoSpoti с вашего компьютера?",
-                "Удаление DodoSpoti",
+                "Вы уверены, что хотите полностью удалить DodoMusic с вашего компьютера?",
+                "Удаление DodoMusic",
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Question
             );
@@ -41,7 +41,7 @@ namespace DodoSpotiInstaller
             try
             {
                 // Закрываем процессы плеера
-                foreach (var procName in new[] { "DodoSpoti", "DodoSpoti-Native" })
+                foreach (var procName in new[] { "DodoMusic", "DodoMusic-Native" })
                 {
                     try
                     {
@@ -55,16 +55,16 @@ namespace DodoSpotiInstaller
                 }
 
                 // Удаляем ярлыки
-                string desktopLnk = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "DodoSpoti.lnk");
+                string desktopLnk = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "DodoMusic.lnk");
                 if (File.Exists(desktopLnk)) File.Delete(desktopLnk);
 
-                string startMenuLnk = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.StartMenu), "Programs", "DodoSpoti.lnk");
+                string startMenuLnk = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.StartMenu), "Programs", "DodoMusic.lnk");
                 if (File.Exists(startMenuLnk)) File.Delete(startMenuLnk);
 
                 // Удаляем запись из реестра Windows
                 try
                 {
-                    Registry.CurrentUser.DeleteSubKeyTree(@"Software\Microsoft\Windows\CurrentVersion\Uninstall\DodoSpoti", false);
+                    Registry.CurrentUser.DeleteSubKeyTree(@"Software\Microsoft\Windows\CurrentVersion\Uninstall\DodoMusic", false);
                 }
                 catch { }
 
@@ -80,7 +80,7 @@ namespace DodoSpotiInstaller
                 });
 
                 MessageBox.Show(
-                    "DodoSpoti был успешно удален с вашего компьютера.",
+                    "DodoMusic был успешно удален с вашего компьютера.",
                     "Удаление завершено",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Information
@@ -132,7 +132,7 @@ namespace DodoSpotiInstaller
 
         public SetupForm()
         {
-            this.Text = "Установка DodoSpoti v1.3";
+            this.Text = "Установка DodoMusic v1.3";
             this.Size = new Size(580, 490);
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
@@ -182,7 +182,7 @@ namespace DodoSpotiInstaller
 
             titleLabel = new Label
             {
-                Text = "DodoSpoti v1.3",
+                Text = "DodoMusic v1.3",
                 Font = new Font("Segoe UI", 16f, FontStyle.Bold),
                 ForeColor = textPrimary,
                 Location = new Point(92, 16),
@@ -222,7 +222,7 @@ namespace DodoSpotiInstaller
             string defaultPath = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 "Programs",
-                "DodoSpoti"
+                "DodoMusic"
             );
 
             pathTextBox = new TextBox
@@ -253,7 +253,7 @@ namespace DodoSpotiInstaller
                     fbd.SelectedPath = pathTextBox.Text;
                     if (fbd.ShowDialog() == DialogResult.OK)
                     {
-                        pathTextBox.Text = Path.Combine(fbd.SelectedPath, "DodoSpoti");
+                        pathTextBox.Text = Path.Combine(fbd.SelectedPath, "DodoMusic");
                     }
                 }
             };
@@ -296,7 +296,7 @@ namespace DodoSpotiInstaller
             };
             Label infoItems = new Label
             {
-                Text = "✔ Полный движок воспроизведения (Spotify, SoundCloud, Audius)\n" +
+                Text = "✔ Полный движок воспроизведения (SoundCloud, Audius)\n" +
                        "✔ Синхронизированный караоке-текст с перемоткой по строкам\n" +
                        "✔ Умная волна рекомендаций и анализ вкуса\n" +
                        "✔ 100% Zero Telemetry — все данные только на вашем компьютере",
@@ -311,7 +311,7 @@ namespace DodoSpotiInstaller
             // Кнопки внизу
             installBtn = new Button
             {
-                Text = "Установить DodoSpoti",
+                Text = "Установить DodoMusic",
                 Location = new Point(345, 305),
                 Size = new Size(200, 38),
                 BackColor = accentGreen,
@@ -409,7 +409,7 @@ namespace DodoSpotiInstaller
 
             finishTitleLabel = new Label
             {
-                Text = "DodoSpoti успешно установлен!",
+                Text = "DodoMusic успешно установлен!",
                 Font = new Font("Segoe UI", 14f, FontStyle.Bold),
                 ForeColor = textPrimary,
                 Location = new Point(100, 45),
@@ -426,7 +426,7 @@ namespace DodoSpotiInstaller
 
             launchNowCb = new CheckBox
             {
-                Text = "Запустить DodoSpoti сейчас",
+                Text = "Запустить DodoMusic сейчас",
                 Checked = true,
                 Font = new Font("Segoe UI", 10f, FontStyle.Bold),
                 ForeColor = accentGreen,
@@ -451,7 +451,7 @@ namespace DodoSpotiInstaller
             {
                 if (launchNowCb.Checked && !string.IsNullOrEmpty(targetDir))
                 {
-                    string exePath = Path.Combine(targetDir, "DodoSpoti.exe");
+                    string exePath = Path.Combine(targetDir, "DodoMusic.exe");
                     if (File.Exists(exePath))
                     {
                         Process.Start(new ProcessStartInfo
@@ -499,7 +499,7 @@ namespace DodoSpotiInstaller
                     // Закрываем запущенные экземпляры перед перезаписью
                     try
                     {
-                        foreach (var p in Process.GetProcessesByName("DodoSpoti"))
+                        foreach (var p in Process.GetProcessesByName("DodoMusic"))
                         {
                             p.Kill();
                             p.WaitForExit(1000);
@@ -547,14 +547,14 @@ namespace DodoSpotiInstaller
 
                     // Копируем сам установщик как деинсталлятор
                     string currentExe = Assembly.GetExecutingAssembly().Location;
-                    string uninstallerPath = Path.Combine(targetDir, "Uninstall-DodoSpoti.exe");
+                    string uninstallerPath = Path.Combine(targetDir, "Uninstall-DodoMusic.exe");
                     try
                     {
                         File.Copy(currentExe, uninstallerPath, true);
                     }
                     catch { }
 
-                    string mainExe = Path.Combine(targetDir, "DodoSpoti.exe");
+                    string mainExe = Path.Combine(targetDir, "DodoMusic.exe");
                     string iconPath = mainExe;
 
                     // Создаем ярлык на Рабочем столе
@@ -562,8 +562,8 @@ namespace DodoSpotiInstaller
                     {
                         this.BeginInvoke(new Action(() => currentFileLabel.Text = "Создание ярлыка на Рабочем столе..."));
                         string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
-                        string lnkFile = Path.Combine(desktopPath, "DodoSpoti.lnk");
-                        CreateShortcut(lnkFile, mainExe, targetDir, iconPath, "DodoSpoti Music Player");
+                        string lnkFile = Path.Combine(desktopPath, "DodoMusic.lnk");
+                        CreateShortcut(lnkFile, mainExe, targetDir, iconPath, "DodoMusic Music Player");
                     }
 
                     // Создаем ярлык в меню «Пуск»
@@ -571,24 +571,24 @@ namespace DodoSpotiInstaller
                     {
                         this.BeginInvoke(new Action(() => currentFileLabel.Text = "Добавление в меню «Пуск»..."));
                         string startMenuPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.StartMenu), "Programs");
-                        string lnkFile = Path.Combine(startMenuPath, "DodoSpoti.lnk");
-                        CreateShortcut(lnkFile, mainExe, targetDir, iconPath, "DodoSpoti Music Player");
+                        string lnkFile = Path.Combine(startMenuPath, "DodoMusic.lnk");
+                        CreateShortcut(lnkFile, mainExe, targetDir, iconPath, "DodoMusic Music Player");
                     }
 
                     // Регистрация в панели «Программы и компоненты» Windows
                     try
                     {
-                        using (var key = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Uninstall\DodoSpoti"))
+                        using (var key = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Uninstall\DodoMusic"))
                         {
                             if (key != null)
                             {
-                                key.SetValue("DisplayName", "DodoSpoti");
+                                key.SetValue("DisplayName", "DodoMusic");
                                 key.SetValue("DisplayVersion", "1.3.0");
-                                key.SetValue("Publisher", "DodoSpoti");
+                                key.SetValue("Publisher", "DodoMusic");
                                 key.SetValue("DisplayIcon", mainExe + ",0");
                                 key.SetValue("InstallLocation", targetDir);
                                 key.SetValue("UninstallString", "\"" + uninstallerPath + "\" --uninstall");
-                                key.SetValue("URLInfoAbout", "https://github.com/redmi157312/DodoSpoti");
+                                key.SetValue("URLInfoAbout", "https://github.com/redmi157312/DodoMusic");
                                 key.SetValue("NoModify", 1, RegistryValueKind.DWord);
                                 key.SetValue("NoRepair", 1, RegistryValueKind.DWord);
                             }

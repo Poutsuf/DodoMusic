@@ -171,9 +171,9 @@ const I18N = {
         open_disclaimer_btn: 'Товарные знаки и Disclaimer',
         settings_updates: 'Обновления DodoMusic',
         settings_updates_hint: 'Проверка новых версий и релизов на GitHub',
-        version_chip: 'Версия v1.1',
+        version_chip: 'Версия v1.4',
         update_status_ok: 'Актуальная версия',
-        update_notes: 'DodoMusic v1.1 — Постоянное сохранение библиотеки и лайков на диск, скачивание MP3, системные уведомления Windows и медиа-клавиши.',
+        update_notes: 'DodoMusic v1.4 — Постоянное сохранение библиотеки и лайков на диск, скачивание MP3, системные уведомления Windows и медиа-клавиши.',
         check_updates_btn: 'Проверить обновления',
         github_releases_btn: 'Релизы на GitHub',
         player_select_track: 'Выберите песню',
@@ -265,9 +265,9 @@ const I18N = {
         open_disclaimer_btn: 'Trademarks & Disclaimer',
         settings_updates: 'DodoMusic Updates',
         settings_updates_hint: 'Check GitHub releases for new updates',
-        version_chip: 'Version v1.1',
+        version_chip: 'Version v1.4',
         update_status_ok: 'Up to date',
-        update_notes: 'DodoMusic v1.1 — Persistent local library on disk, MP3 downloads, Windows system notifications and media keys.',
+        update_notes: 'DodoMusic v1.4 — Persistent local library on disk, MP3 downloads, Windows system notifications and media keys.',
         check_updates_btn: 'Check for Updates',
         github_releases_btn: 'GitHub Releases',
         player_select_track: 'Select a track',
@@ -2533,7 +2533,7 @@ if ('mediaSession' in navigator) {
     } catch (_) {}
 }
 
-// СИСТЕМА ОБНОВЛЕНИЙ ЧЕРЕЗ GITHUB (v1.1)
+// СИСТЕМА ОБНОВЛЕНИЙ ЧЕРЕЗ GITHUB (v1.4)
 async function checkAppUpdates(manual = false) {
     const updateBadgeBtn = document.getElementById('updateBadgeBtn');
     const updateBadgeLabel = document.getElementById('updateBadgeLabel');
@@ -2582,22 +2582,22 @@ async function checkAppUpdates(manual = false) {
         } else {
             if (updateBadgeBtn) {
                 updateBadgeBtn.classList.remove('has-update');
-                updateBadgeBtn.title = 'У вас установлена последняя версия v1.1';
+                updateBadgeBtn.title = 'У вас установлена последняя версия v1.4';
             }
             if (updateBadgeLabel) {
-                updateBadgeLabel.textContent = 'v1.1 Актуально';
+                updateBadgeLabel.textContent = 'v1.4 Актуально';
                 updateBadgeLabel.style.color = '';
             }
             if (updateStatusText) {
                 updateStatusText.className = 'update-status-badge ok';
-                updateStatusText.textContent = 'Установлена последняя версия v1.1';
+                updateStatusText.textContent = 'Установлена последняя версия v1.4';
             }
             if (updateNotesText) {
-                updateNotesText.textContent = 'DodoMusic v1.1 — Постоянное сохранение библиотеки на диск, скачивание MP3, сердечки лайков на карточках и системная интеграция Windows.';
+                updateNotesText.textContent = 'DodoMusic v1.4 — Постоянное сохранение библиотеки на диск, скачивание MP3, сердечки лайков на карточках и системная интеграция Windows.';
             }
             if (manual) {
                 showSystemNotification(
-                    'DodoMusic v1.1',
+                    'DodoMusic v1.4',
                     'У вас установлена самая актуальная версия! Обновлений не требуется.',
                     'success'
                 );
@@ -2606,7 +2606,7 @@ async function checkAppUpdates(manual = false) {
     } catch (err) {
         console.warn('Update check error:', err);
         if (updateStatusText) {
-            updateStatusText.textContent = 'v1.1 (Офлайн)';
+            updateStatusText.textContent = 'v1.4 (Офлайн)';
         }
         if (manual) {
             showSystemNotification(

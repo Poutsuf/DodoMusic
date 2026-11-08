@@ -718,7 +718,7 @@ export async function fetchTrackLyrics(title = '', artist = '', duration = 0) {
             let getUrl = `https://lrclib.net/api/get?track_name=${encodeURIComponent(cleanTitle)}&artist_name=${encodeURIComponent(cleanArtist)}`;
             if (duration > 0) getUrl += `&duration=${Math.round(duration)}`;
             const res = await fetch(getUrl, {
-                headers: { 'User-Agent': 'DodoMusic/1.1 (https://github.com/foridorpo-blip/DodoMusic)' },
+                headers: { 'User-Agent': 'DodoMusic/1.1 (https://github.com/Poutsuf/DodoMusic-Windows)' },
                 signal: AbortSignal.timeout(6000)
             });
             if (res.ok) {
@@ -757,7 +757,7 @@ export async function fetchTrackLyrics(title = '', artist = '', duration = 0) {
         try {
             const searchUrl = `https://lrclib.net/api/search?q=${encodeURIComponent(q)}`;
             const res = await fetch(searchUrl, {
-                headers: { 'User-Agent': 'DodoMusic/1.1 (https://github.com/foridorpo-blip/DodoMusic)' },
+                headers: { 'User-Agent': 'DodoMusic/1.1 (https://github.com/Poutsuf/DodoMusic-Windows)' },
                 signal: AbortSignal.timeout(6000)
             });
             if (res.ok) {
@@ -995,14 +995,14 @@ app.all('/api/playlist-tracks', async (req, res) => {
     }
 });
 
-const CURRENT_APP_VERSION = 'v1.1';
+const CURRENT_APP_VERSION = 'v1.4';
 
 app.all('/api/check-update', async (req, res) => {
-    const repo = (req.body?.repo || req.query?.repo || 'foridorpo-blip/DodoMusic').trim();
+    const repo = (req.body?.repo || req.query?.repo || 'Poutsuf/DodoMusic-Windows').trim();
     try {
         const ghRes = await fetch(`https://api.github.com/repos/${repo}/releases/latest`, {
             headers: {
-                'User-Agent': 'DodoMusic-Desktop-v1.1',
+                'User-Agent': 'DodoMusic-Desktop-v1.4',
                 'Accept': 'application/vnd.github.v3+json',
             },
             signal: AbortSignal.timeout(5000),
@@ -1022,7 +1022,7 @@ app.all('/api/check-update', async (req, res) => {
                 const lMinor = parseInt(matchLatest[2], 10);
                 hasUpdate = (lMajor > 1) || (lMajor === 1 && lMinor > 1);
             } else {
-                hasUpdate = cleanTag !== 'v1.1' && cleanTag !== 'v1.0' && cleanTag !== 'dodomusic';
+                hasUpdate = cleanTag !== 'v1.4' && cleanTag !== 'v1.0' && cleanTag !== 'dodomusic';
             }
 
             return res.json({
@@ -1040,7 +1040,7 @@ app.all('/api/check-update', async (req, res) => {
         currentVersion: CURRENT_APP_VERSION,
         latestVersion: CURRENT_APP_VERSION,
         hasUpdate: false,
-        message: 'У вас установлена последняя версия DodoMusic (v1.1).',
+        message: 'У вас установлена последняя версия DodoMusic (v1.4).',
         downloadUrl: `https://github.com/${repo}/releases`,
     });
 });

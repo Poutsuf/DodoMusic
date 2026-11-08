@@ -2,7 +2,7 @@ $ErrorActionPreference = "Stop"
 $projectDir = $PSScriptRoot
 Set-Location $projectDir
 
-# 1. Create DodoSpoti icon (icon.ico)
+# 1. Create DodoMusic icon (icon.ico)
 Add-Type -AssemblyName System.Drawing
 $bmp = New-Object System.Drawing.Bitmap(64, 64)
 $g = [System.Drawing.Graphics]::FromImage($bmp)
@@ -28,9 +28,9 @@ $fs.Close()
 $bmp.Dispose()
 Write-Output "Icon created: $iconPath"
 
-# 2. Extract cached Electron build into dist\DodoSpoti-win32-x64
+# 2. Extract cached Electron build into dist\DodoMusic-win32-x64
 $electronZip = Get-ChildItem "$env:LOCALAPPDATA\electron\Cache\*\electron-*-win32-x64.zip" | Select-Object -First 1
-$distDir = Join-Path $projectDir "dist\DodoSpoti-win32-x64"
+$distDir = Join-Path $projectDir "dist\DodoMusic-win32-x64"
 if (Test-Path $distDir) {
     Remove-Item -Recurse -Force $distDir
 }
@@ -39,7 +39,7 @@ New-Item -ItemType Directory -Force -Path $distDir | Out-Null
 Write-Output "Extracting Electron runtime..."
 Expand-Archive -Path $electronZip.FullName -DestinationPath $distDir -Force
 
-Move-Item -Path (Join-Path $distDir "electron.exe") -Destination (Join-Path $distDir "DodoSpoti.exe") -Force
+Move-Item -Path (Join-Path $distDir "electron.exe") -Destination (Join-Path $distDir "DodoMusic.exe") -Force
 
 $defaultAsar = Join-Path $distDir "resources\default_app.asar"
 if (Test-Path $defaultAsar) {
@@ -61,39 +61,22 @@ Copy-Item "$projectDir\public" (Join-Path $appResDir "public") -Recurse -Force
 
 $null = robocopy "$projectDir\node_modules" "$appResDir\node_modules" /E /NFL /NDL /NJH /NJS /NC /NS /NP
 
-Write-Output "Built dist\DodoSpoti-win32-x64\DodoSpoti.exe"
+Write-Output "Built dist\DodoMusic-win32-x64\DodoMusic.exe"
 
-# 4. Compile root DodoSpoti.exe launcher
-$csCode = @"
-using System;
-using System.Diagnostics;
-using System.IO;
-using System.Windows.Forms;
-
-class Program {
-    [STAThread]
-    static void Main() {
-        string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-        string targetExe = Path.Combine(baseDir, "dist", "DodoSpoti-win32-x64", "DodoSpoti.exe");
-        if (!File.Exists(targetExe)) {
-            MessageBox.Show("File not found: " + targetExe, "DodoSpoti", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            return;
-        }
-        ProcessStartInfo psi = new ProcessStartInfo();
-        psi.FileName = targetExe;
-        psi.WorkingDirectory = Path.GetDirectoryName(targetExe);
-        psi.UseShellExecute = true;
-        Process.Start(psi);
-    }
+# 4. Pack into payload.zip for installer
+$payloadZip = Join-Path $projectDir "payload.zip"
+if (Test-Path $payloadZip) {
+    Remove-Item -Force $payloadZip
 }
-"@
+Write-Output "Compressing payload.zip..."
+[System.IO.Compression.ZipFile]::CreateFromDirectory($distDir, $payloadZip, [System.IO.Compression.CompressionLevel]::Fastest, $false)
+Write-Output "payload.zip created: $( (Get-Item $payloadZip).Length ) bytes"
 
-$csPath = Join-Path $projectDir "Launcher.cs"
-Set-Content -Path $csPath -Value $csCode -Encoding UTF8
+# 5. Compile DodoMusic-v1.4-Setup.exe
+$csc = "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
+$setupExe = Join-Path $projectDir "DodoMusic-v1.4-Setup.exe"
 
-$csc = Get-ChildItem "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe" | Select-Object -First 1
-$rootExe = Join-Path $projectDir "DodoSpoti.exe"
-& $csc.FullName /target:winexe /out:$rootExe /win32icon:$iconPath /r:System.Windows.Forms.dll $csPath | Out-Null
-Remove-Item $csPath -Force
+Write-Output "Compiling DodoMusic-v1.4-Setup.exe..."
+& $csc /nologo /target:winexe /optimize+ /platform:x64 /out:$setupExe /win32icon:$iconPath /resource:$payloadZip,payload.zip /resource:$iconPath,icon.ico /resource:"$projectDir\icon_setup.png",icon_setup.png /reference:System.IO.Compression.dll /reference:System.IO.Compression.FileSystem.dll /reference:System.Windows.Forms.dll /reference:System.Drawing.dll /reference:System.dll /reference:Microsoft.CSharp.dll "$projectDir\Installer.cs"
 
-Write-Output "Root EXE created: $rootExe"
+Write-Output "Setup created successfully: $setupExe"
