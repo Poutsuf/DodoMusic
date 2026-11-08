@@ -1544,11 +1544,13 @@ muteBtn.addEventListener('click', () => {
     muteBtn.classList.toggle('active', audioPlayer.muted);
 });
 
-// Клик по артисту в нижней панели плеера
+// Клик по артисту в нижней панели плеера (переход на страницу профиля артиста)
 if (playerArtist) {
-    playerArtist.addEventListener('click', () => {
+    playerArtist.addEventListener('click', (e) => {
+        e.stopPropagation();
         const track = currentQueue[currentIndex];
         if (track?.artist) {
+            closeLyricsModal();
             openArtistPage(track.artist);
         }
     });
@@ -2470,12 +2472,22 @@ lyricsPlaySyncBtn?.addEventListener('click', () => {
 });
 
 playerTrackInfo?.addEventListener('click', (e) => {
-    if (e.target.closest('#likeCurrentBtn')) return;
+    if (e.target.closest('#likeCurrentBtn') || e.target.closest('#playerArtist')) return;
     const current = currentQueue[currentIndex];
     if (current) {
         openLyricsForTrack(current);
     } else {
         showSystemToast('DodoSpoti', 'Сначала включите трек для показа текста', 'info');
+    }
+});
+
+// Клик по имени артиста в шапке окна текста также открывает профиль артиста
+lyricsTrackArtist?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const track = currentLyricsTrack || currentQueue[currentIndex];
+    if (track?.artist) {
+        closeLyricsModal();
+        openArtistPage(track.artist);
     }
 });
 

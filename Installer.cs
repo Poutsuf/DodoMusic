@@ -132,7 +132,7 @@ namespace DodoSpotiInstaller
 
         public SetupForm()
         {
-            this.Text = "Установка DodoSpoti v1.1";
+            this.Text = "Установка DodoSpoti v1.2";
             this.Size = new Size(580, 490);
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
@@ -182,7 +182,7 @@ namespace DodoSpotiInstaller
 
             titleLabel = new Label
             {
-                Text = "DodoSpoti v1.1",
+                Text = "DodoSpoti v1.2",
                 Font = new Font("Segoe UI", 16f, FontStyle.Bold),
                 ForeColor = textPrimary,
                 Location = new Point(92, 16),
@@ -583,12 +583,12 @@ namespace DodoSpotiInstaller
                             if (key != null)
                             {
                                 key.SetValue("DisplayName", "DodoSpoti");
-                                key.SetValue("DisplayVersion", "1.1.0");
+                                key.SetValue("DisplayVersion", "1.2.0");
                                 key.SetValue("Publisher", "DodoSpoti");
                                 key.SetValue("DisplayIcon", mainExe + ",0");
                                 key.SetValue("InstallLocation", targetDir);
                                 key.SetValue("UninstallString", "\"" + uninstallerPath + "\" --uninstall");
-                                key.SetValue("URLInfoAbout", "https://github.com/foridorpo-blip/DodoSpoti");
+                                key.SetValue("URLInfoAbout", "https://github.com/redmi157312/DodoSpoti");
                                 key.SetValue("NoModify", 1, RegistryValueKind.DWord);
                                 key.SetValue("NoRepair", 1, RegistryValueKind.DWord);
                             }
