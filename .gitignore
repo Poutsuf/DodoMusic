@@ -15,6 +15,7 @@ electron-debug.log
 
 # Build intermediate
 dist/
+dist-release/
 build/
 
 # OS files
