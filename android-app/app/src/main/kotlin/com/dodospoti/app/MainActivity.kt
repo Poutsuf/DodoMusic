@@ -24,10 +24,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
@@ -35,6 +32,7 @@ import androidx.webkit.WebViewAssetLoader
 import com.dodospoti.app.ui.theme.DodoSpotiTheme
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.zip.GZIPInputStream
 
 class MainActivity : ComponentActivity() {
 
@@ -87,22 +85,49 @@ class AndroidBridgeInterface(private val context: Context) {
     @JavascriptInterface
     fun fetchUrl(urlStr: String): String {
         return try {
-            val url = URL(urlStr)
-            val conn = (url.openConnection() as HttpURLConnection).apply {
-                requestMethod = "GET"
-                connectTimeout = 7000
-                readTimeout = 7000
-                setRequestProperty(
-                    "User-Agent",
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-                )
-                setRequestProperty("Accept", "*/*")
-                if (urlStr.contains("soundcloud.com")) {
-                    setRequestProperty("Origin", "https://soundcloud.com")
-                    setRequestProperty("Referer", "https://soundcloud.com/")
+            var currentUrl = URL(urlStr)
+            var redirects = 0
+            while (redirects < 6) {
+                val conn = (currentUrl.openConnection() as HttpURLConnection).apply {
+                    requestMethod = "GET"
+                    connectTimeout = 9000
+                    readTimeout = 9000
+                    instanceFollowRedirects = true
+                    setRequestProperty(
+                        "User-Agent",
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+                    )
+                    setRequestProperty("Accept", "*/*")
+                    if (currentUrl.host.contains("soundcloud.com")) {
+                        setRequestProperty("Origin", "https://soundcloud.com")
+                        setRequestProperty("Referer", "https://soundcloud.com/")
+                    }
                 }
+
+                val responseCode = conn.responseCode
+                if (responseCode in 301..308) {
+                    val location = conn.getHeaderField("Location") ?: break
+                    currentUrl = URL(currentUrl, location)
+                    redirects++
+                    continue
+                }
+
+                val stream = if (responseCode in 200..299) {
+                    conn.inputStream
+                } else {
+                    conn.errorStream ?: return ""
+                }
+
+                val encoding = conn.contentEncoding
+                val inputStream = if ("gzip".equals(encoding, ignoreCase = true)) {
+                    GZIPInputStream(stream)
+                } else {
+                    stream
+                }
+
+                return inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
             }
-            conn.inputStream.bufferedReader().use { it.readText() }
+            ""
         } catch (e: Exception) {
             android.util.Log.e("DodoSpoti", "fetchUrl error for $urlStr: ${e.message}")
             ""
@@ -119,17 +144,13 @@ fun DodoSpotiPlayerScreen(
     onWebViewCreated: (WebView) -> Unit
 ) {
     val context = LocalContext.current
-    val prefs = remember { context.getSharedPreferences("dodospoti_prefs", Context.MODE_PRIVATE) }
     val assetLoader = remember {
         WebViewAssetLoader.Builder()
             .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(context))
             .build()
     }
-    val defaultUrl = "https://appassets.androidplatform.net/assets/www/index.html"
-    var currentUrl by remember {
-        mutableStateOf(prefs.getString("server_url", defaultUrl) ?: defaultUrl)
-    }
-    var activeWebView by remember { mutableStateOf<WebView?>(null) }
+    // Автономное приложение всегда загружает локальные веб-ресурсы без зависимости от внешних серверов
+    val targetUrl = "https://appassets.androidplatform.net/assets/www/index.html"
 
     Box(modifier = Modifier.fillMaxSize()) {
         AndroidView(
@@ -142,7 +163,7 @@ fun DodoSpotiPlayerScreen(
                     )
                     setBackgroundColor(Color.parseColor("#06070b"))
 
-                    // Включаем аппаратное ускорение для максимальной плавности
+                    // Включаем аппаратное ускорение для максимальной плавности (60-120 FPS)
                     setLayerType(View.LAYER_TYPE_HARDWARE, null)
                     isVerticalScrollBarEnabled = false
                     isHorizontalScrollBarEnabled = false
@@ -158,7 +179,7 @@ fun DodoSpotiPlayerScreen(
                         allowFileAccessFromFileURLs = true
                         allowUniversalAccessFromFileURLs = true
 
-                        // Корректный мобильный Viewport: страница подстраивается точно под ширину экрана
+                        // Мобильный Viewport: идеальная подгонка под ширину экрана без вылезания
                         useWideViewPort = true
                         loadWithOverviewMode = true
 
@@ -166,7 +187,7 @@ fun DodoSpotiPlayerScreen(
                         userAgentString = "$userAgentString DodoSpotiAndroid/1.3"
                     }
 
-                    // Добавляем нативный мост для HTTP запросов без CORS
+                    // Нативный мост для мгновенных запросов к SoundCloud/Audius без CORS
                     addJavascriptInterface(AndroidBridgeInterface(context), "AndroidBridge")
 
                     webChromeClient = object : WebChromeClient() {
@@ -198,8 +219,7 @@ fun DodoSpotiPlayerScreen(
                         }
                     }
 
-                    loadUrl(currentUrl)
-                    activeWebView = this
+                    loadUrl(targetUrl)
                     onWebViewCreated(this)
                 }
             }

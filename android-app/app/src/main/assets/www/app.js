@@ -1072,8 +1072,12 @@ async function resolveStreamDirectly(track) {
     throw new Error('Не удалось разрешить аудиопоток');
 }
 
-async function searchMusic(query) {
-    if (!query?.trim()) return;
+async function searchMusic(rawQuery) {
+    if (!rawQuery?.trim()) return;
+    let query = rawQuery.trim();
+    if (query === 'spotify:top') query = 'Miyagi Macan Дора';
+    if (query === 'spotify:russia') query = 'Русские хиты Miyagi';
+
     saveSearchHistoryQuery(query);
     searchBtn.disabled = true;
     searchBtn.textContent = 'Поиск...';
@@ -1081,7 +1085,7 @@ async function searchMusic(query) {
     resultsCount.textContent = 'Поиск треков...';
 
     let foundTracks = null;
-    let cleanQuery = query.trim();
+    let cleanQuery = query;
 
     // 1. Попытка через локальный сервер (если приложение на ПК с локальным сервером)
     if (!isStandaloneApp) {
@@ -1103,20 +1107,27 @@ async function searchMusic(query) {
     }
 
     // 2. Fallback: Прямой поиск в SoundCloud + Audius
-    if (!foundTracks) {
+    if (!foundTracks || foundTracks.length === 0) {
         try {
             foundTracks = await searchMusicDirectly(query);
         } catch (err) {
-            tracksContainer.innerHTML = `<div class="empty-state">${err.message}</div>`;
-            searchBtn.disabled = false;
-            searchBtn.textContent = 'Найти';
-            return;
+            console.warn('[Direct search error]', err);
+        }
+    }
+
+    // 3. Если ничего не найдено по многословному запросу, пробуем по ключевому слову
+    if (!foundTracks || foundTracks.length === 0) {
+        const words = query.split(/\s+/);
+        if (words.length > 1) {
+            try {
+                foundTracks = await searchMusicDirectly(words[0]);
+            } catch (_) {}
         }
     }
 
     currentQueue = foundTracks || [];
     resultsHeading.textContent = cleanQuery;
-    resultsCount.textContent = `Найдено: ${currentQueue.length} (онлайн)`;
+    resultsCount.textContent = currentQueue.length > 0 ? `Найдено: ${currentQueue.length} (онлайн)` : 'Песни не найдены';
     renderTracksGrid(tracksContainer, currentQueue);
 
     searchBtn.disabled = false;
@@ -2807,17 +2818,16 @@ async function fetchLrclibDirectly(rawTitle = '', rawArtist = '', duration = 0) 
             const searchUrl = `https://lrclib.net/api/search?q=${encodeURIComponent(q)}`;
             const list = await networkFetchJson(searchUrl, 5000);
             if (Array.isArray(list) && list.length > 0) {
-                    const best = list.find(item => item.syncedLyrics) || list[0];
-                    if (best && (best.syncedLyrics || best.plainLyrics)) {
-                        return {
-                            found: true,
-                            synced: Boolean(best.syncedLyrics),
-                            lines: best.syncedLyrics ? parseClientLrc(best.syncedLyrics) : [],
-                            plainLyrics: best.plainLyrics || '',
-                            trackName: best.name,
-                            artistName: best.artistName
-                        };
-                    }
+                const best = list.find(item => item.syncedLyrics) || list[0];
+                if (best && (best.syncedLyrics || best.plainLyrics)) {
+                    return {
+                        found: true,
+                        synced: Boolean(best.syncedLyrics),
+                        lines: best.syncedLyrics ? parseClientLrc(best.syncedLyrics) : [],
+                        plainLyrics: best.plainLyrics || '',
+                        trackName: best.name,
+                        artistName: best.artistName
+                    };
                 }
             }
         } catch (_) {}
