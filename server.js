@@ -326,15 +326,30 @@ app.get('/api/resolve-stream', async (req, res) => {
         try {
             const cid = await getSoundCloudClientId();
             const resolved = await fetch(`${transcodingUrl}?client_id=${cid}`);
-            if (!resolved.ok) throw new Error('Не удалось разрешить поток SoundCloud');
-            const data = await resolved.json();
-            return res.json({
-                streamUrl: data.url,
-                protocol: transcodingUrl.includes('/hls') ? 'hls' : 'progressive',
-            });
-        } catch (err) {
-            return res.status(502).json({ error: err.message });
-        }
+            if (resolved.ok) {
+                const data = await resolved.json();
+                if (data.url) {
+                    return res.json({
+                        streamUrl: data.url,
+                        protocol: transcodingUrl.includes('/hls') ? 'hls' : 'progressive',
+                    });
+                }
+            }
+        } catch (_) {}
+    }
+
+    // Резервная попытка через Audius, если артист и трек указаны
+    if (artist || title) {
+        try {
+            const q = `${artist || ''} ${title || ''}`.trim();
+            const audTracks = await searchAudiusFullTracks(q);
+            if (audTracks.length > 0 && audTracks[0].streamUrl) {
+                return res.json({
+                    streamUrl: audTracks[0].streamUrl,
+                    protocol: 'progressive',
+                });
+            }
+        } catch (_) {}
     }
 
     if (previewUrl) {
@@ -342,6 +357,34 @@ app.get('/api/resolve-stream', async (req, res) => {
     }
 
     return res.status(400).json({ error: 'Не указаны параметры потока' });
+});
+
+// Локальный потоковый прокси
+app.get('/api/stream-proxy', async (req, res) => {
+    const targetUrl = req.query?.url;
+    if (!targetUrl) return res.status(400).send('No url');
+    try {
+        const headers = { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' };
+        if (req.headers.range) {
+            headers['Range'] = req.headers.range;
+        }
+        const upstream = await fetch(targetUrl, { headers });
+        res.status(upstream.status);
+        for (const [k, v] of upstream.headers.entries()) {
+            if (['content-type', 'content-length', 'content-range', 'accept-ranges'].includes(k.toLowerCase())) {
+                res.setHeader(k, v);
+            }
+        }
+        const reader = upstream.body.getReader();
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            res.write(value);
+        }
+        res.end();
+    } catch (e) {
+        if (!res.headersSent) res.status(502).send(e.message);
+    }
 });
 
 /**

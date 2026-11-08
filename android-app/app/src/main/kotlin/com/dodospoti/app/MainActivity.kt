@@ -11,9 +11,11 @@ import android.webkit.ConsoleMessage
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.webkit.WebViewAssetLoader
 import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.Toast
@@ -97,8 +99,14 @@ fun DodoSpotiPlayerScreen(
 ) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("dodospoti_prefs", Context.MODE_PRIVATE) }
+    val assetLoader = remember {
+        WebViewAssetLoader.Builder()
+            .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(context))
+            .build()
+    }
+    val defaultUrl = "https://appassets.androidplatform.net/assets/www/index.html"
     var currentUrl by remember {
-        mutableStateOf(prefs.getString("server_url", "file:///android_asset/www/index.html") ?: "file:///android_asset/www/index.html")
+        mutableStateOf(prefs.getString("server_url", defaultUrl) ?: defaultUrl)
     }
     var activeWebView by remember { mutableStateOf<WebView?>(null) }
 
@@ -121,10 +129,12 @@ fun DodoSpotiPlayerScreen(
                         mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
                         allowFileAccess = true
                         allowContentAccess = true
-                        loadWithOverviewMode = true
-                        useWideViewPort = true
+                        allowFileAccessFromFileURLs = true
+                        allowUniversalAccessFromFileURLs = true
+                        loadWithOverviewMode = false
+                        useWideViewPort = false
                         cacheMode = WebSettings.LOAD_DEFAULT
-                        userAgentString = "$userAgentString DodoSpotiAndroid/1.0"
+                        userAgentString = "$userAgentString DodoSpotiAndroid/1.2"
                     }
 
                     webChromeClient = object : WebChromeClient() {
@@ -135,8 +145,12 @@ fun DodoSpotiPlayerScreen(
                     }
 
                     webViewClient = object : WebViewClient() {
-                        override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
-                            super.onPageStarted(view, url, favicon)
+                        override fun shouldInterceptRequest(
+                            view: WebView?,
+                            request: WebResourceRequest?
+                        ): WebResourceResponse? {
+                            val url = request?.url ?: return null
+                            return assetLoader.shouldInterceptRequest(url)
                         }
 
                         override fun onReceivedError(
@@ -145,6 +159,7 @@ fun DodoSpotiPlayerScreen(
                             error: WebResourceError?
                         ) {
                             super.onReceivedError(view, request, error)
+                            android.util.Log.e("DodoSpoti", "WebView Error: ${error?.description}")
                         }
                     }
 

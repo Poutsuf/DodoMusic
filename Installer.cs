@@ -132,7 +132,7 @@ namespace DodoSpotiInstaller
 
         public SetupForm()
         {
-            this.Text = "Установка DodoSpoti v1.2";
+            this.Text = "Установка DodoSpoti v1.3";
             this.Size = new Size(580, 490);
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
@@ -182,7 +182,7 @@ namespace DodoSpotiInstaller
 
             titleLabel = new Label
             {
-                Text = "DodoSpoti v1.2",
+                Text = "DodoSpoti v1.3",
                 Font = new Font("Segoe UI", 16f, FontStyle.Bold),
                 ForeColor = textPrimary,
                 Location = new Point(92, 16),
@@ -583,7 +583,7 @@ namespace DodoSpotiInstaller
                             if (key != null)
                             {
                                 key.SetValue("DisplayName", "DodoSpoti");
-                                key.SetValue("DisplayVersion", "1.2.0");
+                                key.SetValue("DisplayVersion", "1.3.0");
                                 key.SetValue("Publisher", "DodoSpoti");
                                 key.SetValue("DisplayIcon", mainExe + ",0");
                                 key.SetValue("InstallLocation", targetDir);

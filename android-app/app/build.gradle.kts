@@ -81,4 +81,7 @@ dependencies {
   implementation(libs.androidx.navigation3.ui)
   implementation(libs.androidx.navigation3.runtime)
   implementation(libs.androidx.lifecycle.viewmodel.navigation3)
+
+  // WebKit for secure asset loading and modern WebView features
+  implementation("androidx.webkit:webkit:1.12.1")
 }

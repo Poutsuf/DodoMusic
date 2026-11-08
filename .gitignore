@@ -26,15 +26,15 @@ Desktop.ini
 *.zip
 *.tar.gz
 *.exe
-token.tmp
+*.apk
 *.tmp
+*.bin
 
-# Android build
-android-app/.gradle/
-android-app/build/
-android-app/app/build/
-android-app/local.properties
+# Native build artifacts
 bin-native/
 native-csharp/bin/
 native-csharp/obj/
+publish-release.js
+release_info.json
+update-installer.js
 

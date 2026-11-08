@@ -1,7 +1,47 @@
+// Режим работы: десктопное приложение с локальным сервером или автономный клиент (Android / file://)
+const isStandaloneApp = window.location.protocol === 'file:' || 
+                        window.location.hostname === 'appassets.androidplatform.net' || 
+                        navigator.userAgent.includes('DodoSpotiAndroid');
+
 // Нативный HTML5 Audio + HLS.js + Web Audio API анализатор баса
 const audioPlayer = new Audio();
 audioPlayer.crossOrigin = 'anonymous';
 audioPlayer.preload = 'auto';
+
+// Автоматическое восстановление при сетевых ошибках или блокировках потока
+audioPlayer.addEventListener('error', async () => {
+    const track = currentQueue[currentIndex];
+    if (!track) return;
+    console.warn('[AudioPlayer] Playback error encountered on track:', track.title, audioPlayer.error);
+    if (track._hadPlaybackError) {
+        showSystemNotification('Ошибка трека', `Не удалось воспроизвести «${decodeHtml(track.title)}»`, 'warn');
+        return;
+    }
+    track._hadPlaybackError = true;
+
+    // Резервная попытка через Audius
+    try {
+        const query = `${track.artist || ''} ${track.title || ''}`.trim();
+        if (query) {
+            const audMatches = await searchAudiusDirectly(query);
+            if (audMatches.length > 0 && audMatches[0].streamUrl) {
+                audioPlayer.src = audMatches[0].streamUrl;
+                await audioPlayer.play();
+                showSystemNotification('Резервный поток', `Воспроизведение через Audius: ${decodeHtml(track.title)}`, 'info');
+                return;
+            }
+        }
+    } catch (_) {}
+
+    // Резервная попытка через локальный прокси на ПК
+    if (!isStandaloneApp && audioPlayer.src && !audioPlayer.src.includes('/api/stream-proxy')) {
+        try {
+            audioPlayer.src = `/api/stream-proxy?url=${encodeURIComponent(audioPlayer.src)}`;
+            await audioPlayer.play();
+            return;
+        } catch (_) {}
+    }
+});
 
 let currentHls = null;
 let audioCtx = null;
@@ -656,6 +696,19 @@ function renderTasteAnalysisUI() {
     }
 }
 
+async function generateClientTasteWave(seedTrack) {
+    try {
+        const artist = seedTrack.artist || '';
+        const title = seedTrack.title || '';
+        const queries = [artist, `${artist} feat`, `${artist} remix`, title].filter(Boolean);
+        const query = queries[Math.floor(Math.random() * queries.length)] || 'хиты 2024';
+        const tracks = await searchMusicDirectly(query);
+        return tracks.filter(t => t.id !== seedTrack.id).slice(0, 15);
+    } catch (_) {
+        return [];
+    }
+}
+
 async function fetchTasteWaveForTrack(seedTrack) {
     if (!seedTrack) return;
     const tasteProfile = getUserTasteProfile();
@@ -666,23 +719,33 @@ async function fetchTasteWaveForTrack(seedTrack) {
     }
 
     try {
-        const res = await fetch('/api/taste-wave', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                seedTrack: {
-                    id: seedTrack.id,
-                    title: seedTrack.title,
-                    artist: seedTrack.artist,
-                    source: seedTrack.source
-                },
-                tasteProfile
-            })
-        });
+        let tasteTracks = [];
+        if (!isStandaloneApp) {
+            try {
+                const res = await fetch('/api/taste-wave', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        seedTrack: {
+                            id: seedTrack.id,
+                            title: seedTrack.title,
+                            artist: seedTrack.artist,
+                            source: seedTrack.source
+                        },
+                        tasteProfile
+                    }),
+                    signal: AbortSignal.timeout(6000)
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    tasteTracks = data.tracks || [];
+                }
+            } catch (_) {}
+        }
 
-        if (!res.ok) throw new Error('Ошибка генерации taste-wave');
-        const data = await res.json();
-        const tasteTracks = data.tracks || [];
+        if (tasteTracks.length === 0) {
+            tasteTracks = await generateClientTasteWave(seedTrack);
+        }
 
         if (tasteTracks.length > 0) {
             waveQueue = tasteTracks;
@@ -707,36 +770,259 @@ async function fetchTasteWaveForTrack(seedTrack) {
 }
 
 // Поиск музыки (полные треки)
+
+// =======================================================================
+// STANDALONE DIRECT CLIENT MUSIC ENGINE (SoundCloud + Audius)
+// Provides 100% offline-server capability for Android and PC fallback
+// =======================================================================
+let currentScClientId = '39AVoiZVrdvJEMFLH8T0c5WGshQaAPRJ';
+let lastScClientIdFetch = Date.now();
+const BACKUP_SC_CLIENT_IDS = [
+    '39AVoiZVrdvJEMFLH8T0c5WGshQaAPRJ',
+    'bJ52gOqXW3qJq9s1vG9j6H8F5z8D4w3q',
+    'iZIs9mchVcX5lhVR1HNuuVuehUsvwYtZ',
+    'cc9989a3f295b94fef2b49eb5e57b985'
+];
+
+async function getLiveSoundCloudClientId() {
+    if (currentScClientId && (Date.now() - lastScClientIdFetch < 3600000)) {
+        return currentScClientId;
+    }
+    try {
+        const res = await fetch('https://soundcloud.com', { signal: AbortSignal.timeout(5000) });
+        if (res.ok) {
+            const html = await res.text();
+            const urls = html.match(/https:\/\/a-v2\.sndcdn\.com\/assets\/[^"']+\.js/g) || [];
+            for (const u of urls.slice(-8)) {
+                try {
+                    const jsRes = await fetch(u, { signal: AbortSignal.timeout(4000) });
+                    if (jsRes.ok) {
+                        const js = await jsRes.text();
+                        const m = js.match(/client_id[:=]"([a-zA-Z0-9]{32})"/);
+                        if (m && m[1]) {
+                            currentScClientId = m[1];
+                            lastScClientIdFetch = Date.now();
+                            return currentScClientId;
+                        }
+                    }
+                } catch (_) {}
+            }
+        }
+    } catch (_) {}
+    return currentScClientId || BACKUP_SC_CLIENT_IDS[0];
+}
+
+function mapSoundCloudTrack(t) {
+    const transcodings = t.media?.transcodings || [];
+    const prog = transcodings.find(x => x.format?.protocol === 'progressive');
+    const hls = transcodings.find(x => x.format?.protocol === 'hls');
+    const chosen = prog || hls || transcodings[0];
+    const rawArtwork = t.artwork_url || t.user?.avatar_url || 'icon.png';
+    const artwork = rawArtwork.replace('-large.', '-t500x500.');
+
+    return {
+        id: 'sc_' + t.id,
+        trackId: t.id,
+        source: 'soundcloud',
+        title: t.title || 'Без названия',
+        artist: t.user?.username || 'Неизвестный исполнитель',
+        duration: Math.round((t.duration || 0) / 1000),
+        thumbnail: artwork,
+        transcodingUrl: chosen ? chosen.url : null,
+        protocol: chosen && chosen.format?.protocol === 'hls' ? 'hls' : 'progressive',
+        permalinkUrl: t.permalink_url || '#',
+        genre: t.genre || '',
+        likesCount: t.likes_count || 0,
+        playbackCount: t.playback_count || 0
+    };
+}
+
+async function searchSoundCloudDirectly(query) {
+    if (!query || !query.trim()) return [];
+    try {
+        const cid = await getLiveSoundCloudClientId();
+        const url = 'https://api-v2.soundcloud.com/search/tracks?q=' + encodeURIComponent(query.trim()) + '&client_id=' + cid + '&limit=25';
+        const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
+        if (!res.ok) {
+            if (res.status === 401) {
+                lastScClientIdFetch = 0;
+            }
+            return [];
+        }
+        const data = await res.json();
+        const items = data.collection || [];
+        return items
+            .filter(t => t.id && t.duration >= 30000 && t.duration <= 900000 && t.media?.transcodings?.length)
+            .map(mapSoundCloudTrack);
+    } catch (e) {
+        console.warn('[Direct SC Search] Warn:', e.message);
+        return [];
+    }
+}
+
+async function searchAudiusDirectly(query) {
+    if (!query || !query.trim()) return [];
+    try {
+        const url = 'https://discoveryprovider.audius.co/v1/tracks/search?query=' + encodeURIComponent(query.trim()) + '&app_name=DODOSPOTI';
+        const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
+        if (!res.ok) return [];
+        const data = await res.json();
+        const items = data.data || [];
+        return items
+            .filter(t => t.id && !t.is_unlisted && (t.duration || 0) >= 30)
+            .map(t => ({
+                id: 'aud_' + t.id,
+                trackId: t.id,
+                source: 'audius',
+                title: t.title || 'Без названия',
+                artist: t.user?.name || 'Неизвестный исполнитель',
+                duration: Math.round(t.duration || 0),
+                thumbnail: t.artwork ? (t.artwork['480x480'] || t.artwork['150x150'] || 'icon.png') : 'icon.png',
+                streamUrl: 'https://discoveryprovider.audius.co/v1/tracks/' + t.id + '/stream?app_name=DODOSPOTI',
+                protocol: 'progressive',
+                permalinkUrl: 'https://audius.co' + (t.permalink || ''),
+                genre: t.genre || '',
+                likesCount: t.favorite_count || 0,
+                playbackCount: t.play_count || 0
+            }));
+    } catch (e) {
+        console.warn('[Direct Audius Search] Warn:', e.message);
+        return [];
+    }
+}
+
+async function searchMusicDirectly(query) {
+    const [sc, aud] = await Promise.allSettled([
+        searchSoundCloudDirectly(query),
+        searchAudiusDirectly(query)
+    ]);
+    const scList = sc.status === 'fulfilled' ? sc.value : [];
+    const audList = aud.status === 'fulfilled' ? aud.value : [];
+    return scList.concat(audList);
+}
+
+async function resolveStreamDirectly(track) {
+    if (!track) throw new Error('Трек не указан');
+
+    if (track.streamUrl) {
+        return {
+            streamUrl: track.streamUrl,
+            protocol: 'progressive'
+        };
+    }
+
+    if (track.transcodingUrl) {
+        try {
+            let cid = await getLiveSoundCloudClientId();
+            let res = await fetch(track.transcodingUrl + '?client_id=' + cid, { signal: AbortSignal.timeout(6000) });
+            if (res.status === 401) {
+                lastScClientIdFetch = 0;
+                cid = await getLiveSoundCloudClientId();
+                res = await fetch(track.transcodingUrl + '?client_id=' + cid, { signal: AbortSignal.timeout(6000) });
+            }
+            if (res.ok) {
+                const data = await res.json();
+                if (data.url) {
+                    return {
+                        streamUrl: data.url,
+                        protocol: track.transcodingUrl.includes('/hls') ? 'hls' : 'progressive'
+                    };
+                }
+            }
+        } catch (e) {
+            console.warn('[Direct Stream Resolve] Transcoding error:', e.message);
+        }
+    }
+
+    const query = ((track.artist || '') + ' ' + (track.title || '')).trim();
+    if (query) {
+        const matches = await searchSoundCloudDirectly(query);
+        if (matches.length > 0 && matches[0].transcodingUrl) {
+            const best = matches[0];
+            const cid = await getLiveSoundCloudClientId();
+            const res = await fetch(best.transcodingUrl + '?client_id=' + cid);
+            if (res.ok) {
+                const data = await res.json();
+                if (data.url) {
+                    return {
+                        streamUrl: data.url,
+                        protocol: best.protocol || (best.transcodingUrl.includes('/hls') ? 'hls' : 'progressive')
+                    };
+                }
+            }
+        }
+
+        // Резервная попытка через Audius при сбое SoundCloud
+        try {
+            const audMatches = await searchAudiusDirectly(query);
+            if (audMatches.length > 0 && audMatches[0].streamUrl) {
+                return {
+                    streamUrl: audMatches[0].streamUrl,
+                    protocol: 'progressive'
+                };
+            }
+        } catch (_) {}
+    }
+
+    if (track.previewUrl || track.audioPreview) {
+        return {
+            streamUrl: track.previewUrl || track.audioPreview,
+            protocol: 'progressive'
+        };
+    }
+
+    throw new Error('Не удалось разрешить аудиопоток');
+}
+
 async function searchMusic(query) {
     if (!query?.trim()) return;
     saveSearchHistoryQuery(query);
     searchBtn.disabled = true;
     searchBtn.textContent = 'Поиск...';
     resultsHeading.textContent = query;
-    resultsCount.textContent = 'Поиск полных треков...';
+    resultsCount.textContent = 'Поиск треков...';
 
-    try {
-        const res = await fetch('/api/search-music', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query }),
-        });
+    let foundTracks = null;
+    let cleanQuery = query.trim();
 
-        const data = await res.json();
-        if (!res.ok) {
-            throw new Error(data.error || 'Ошибка при поиске музыки');
-        }
-
-        currentQueue = data.tracks || [];
-        resultsHeading.textContent = data.cleanQuery;
-        resultsCount.textContent = `Треков: ${currentQueue.length} (полные версии)`;
-        renderTracksGrid(tracksContainer, currentQueue);
-    } catch (err) {
-        tracksContainer.innerHTML = `<div class="empty-state">${err.message}</div>`;
-    } finally {
-        searchBtn.disabled = false;
-        searchBtn.textContent = 'Найти';
+    // 1. Попытка через локальный сервер (если приложение на ПК с локальным сервером)
+    if (!isStandaloneApp) {
+        try {
+            const res = await fetch('/api/search-music', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query }),
+                signal: AbortSignal.timeout(5000)
+            });
+            if (res.ok) {
+                const data = await res.json();
+                if (data.tracks && data.tracks.length > 0) {
+                    foundTracks = data.tracks;
+                    cleanQuery = data.cleanQuery || cleanQuery;
+                }
+            }
+        } catch (_) {}
     }
+
+    // 2. Fallback: Прямой поиск в SoundCloud + Audius
+    if (!foundTracks) {
+        try {
+            foundTracks = await searchMusicDirectly(query);
+        } catch (err) {
+            tracksContainer.innerHTML = `<div class="empty-state">${err.message}</div>`;
+            searchBtn.disabled = false;
+            searchBtn.textContent = 'Найти';
+            return;
+        }
+    }
+
+    currentQueue = foundTracks || [];
+    resultsHeading.textContent = cleanQuery;
+    resultsCount.textContent = `Найдено: ${currentQueue.length} (онлайн)`;
+    renderTracksGrid(tracksContainer, currentQueue);
+
+    searchBtn.disabled = false;
+    searchBtn.textContent = 'Найти';
 }
 
 function decodeHtml(html) {
@@ -1030,7 +1316,7 @@ async function playTrackAtIndex(index) {
     const cleanTitle = decodeHtml(track.title);
     const cleanArtist = decodeHtml(track.artist);
 
-    playerCover.src = track.thumbnail || '/icon.png';
+    playerCover.src = track.thumbnail || 'icon.png';
     playerTitle.textContent = cleanTitle;
     playerArtist.textContent = cleanArtist;
     currentTimeEl.textContent = '0:00';
@@ -1055,7 +1341,7 @@ async function playTrackAtIndex(index) {
                 artist: cleanArtist,
                 album: 'DodoSpoti',
                 artwork: [
-                    { src: track.thumbnail || '/icon.png', sizes: '512x512', type: 'image/png' },
+                    { src: track.thumbnail || 'icon.png', sizes: '512x512', type: 'image/png' },
                 ],
             });
             navigator.mediaSession.playbackState = 'playing';
@@ -1088,12 +1374,33 @@ async function playTrackAtIndex(index) {
             title: track.title || '',
         });
 
-        const res = await fetch(`/api/resolve-stream?${params.toString()}`);
-        if (!res.ok) throw new Error('Ошибка разрешения потока');
-        const data = await res.json();
-        const fullStreamUrl = data.streamUrl;
+        let fullStreamUrl = null;
+        let streamProtocol = 'progressive';
 
-        if (data.protocol === 'hls' && window.Hls && Hls.isSupported()) {
+        if (!isStandaloneApp) {
+            try {
+                const res = await fetch(`/api/resolve-stream?${params.toString()}`, { signal: AbortSignal.timeout(5000) });
+                if (res.ok) {
+                    const data = await res.json();
+                    fullStreamUrl = data.streamUrl;
+                    streamProtocol = data.protocol || 'progressive';
+                }
+            } catch (_) {}
+        }
+
+        if (!fullStreamUrl) {
+            try {
+                const directRes = await resolveStreamDirectly(track);
+                fullStreamUrl = directRes.streamUrl;
+                streamProtocol = directRes.protocol;
+            } catch (err) {
+                console.error('Ошибка прямого разрешения потока:', err);
+                showSystemNotification('Ошибка воспроизведения', 'Не удалось загрузить аудиопоток', 'warn');
+                return;
+            }
+        }
+
+        if (streamProtocol === 'hls' && window.Hls && Hls.isSupported()) {
             currentHls = new Hls({
                 maxBufferLength: 45,
                 maxMaxBufferLength: 120,
@@ -1270,7 +1577,7 @@ if (downloadCurrentBtn) {
     downloadCurrentBtn.addEventListener('click', () => {
         const track = currentQueue[currentIndex];
         if (!track) return;
-        showSystemNotification('Скачивание трека', `Загрузка «${decodeHtml(track.title)}»...`, 'music', track.thumbnail || '/icon.png');
+        showSystemNotification('Скачивание трека', `Загрузка «${decodeHtml(track.title)}»...`, 'music', track.thumbnail || 'icon.png');
         const params = new URLSearchParams({
             trackId: track.id,
             source: track.source || (track.isSpotify ? 'spotify' : 'soundcloud'),
@@ -1598,10 +1905,10 @@ async function openArtistPage(artistName) {
         if (!res.ok) throw new Error('Ошибка загрузки данных артиста');
         const data = await res.json();
 
-        const artist = data.artist || { name: cleanName, avatar: '/icon.png', permalinkUrl: '#' };
+        const artist = data.artist || { name: cleanName, avatar: 'icon.png', permalinkUrl: '#' };
         if (artistNameTitle) artistNameTitle.textContent = artist.name;
-        if (artistAvatar) artistAvatar.src = artist.avatar || '/icon.png';
-        if (artistHeroBg) artistHeroBg.src = artist.avatar || '/icon.png';
+        if (artistAvatar) artistAvatar.src = artist.avatar || 'icon.png';
+        if (artistHeroBg) artistHeroBg.src = artist.avatar || 'icon.png';
         if (artistStats) {
             const followers = artist.followersCount ? `${Number(artist.followersCount).toLocaleString('ru-RU')} подписчиков • ` : '';
             artistStats.textContent = `${followers}${data.tracks?.length || 0} треков`;
@@ -1986,7 +2293,7 @@ function renderLiveWallpaper() {
 // СИСТЕМНЫЕ УВЕДОМЛЕНИЯ И ТОСТЫ (WINDOWS + ACTION CENTER)
 let toastTimer = null;
 
-function showSystemNotification(title, body, type = 'info', icon = '/icon.png') {
+function showSystemNotification(title, body, type = 'info', icon = 'icon.png') {
     // 1. Нативное системное уведомление Windows (Windows Action Center Toast) через Electron
     try {
         fetch('/api/system-notify', {
@@ -2022,7 +2329,7 @@ function showSystemNotification(title, body, type = 'info', icon = '/icon.png') 
         toastEl.className = `system-toast ${type} visible`;
 
         if (toastIconWrap) {
-            const iconSrc = icon || '/icon.png';
+            const iconSrc = icon || 'icon.png';
             toastIconWrap.innerHTML = `<img src="${iconSrc}" class="toast-brand-avatar" alt="DodoSpoti" draggable="false" />`;
         }
 
@@ -2164,25 +2471,39 @@ document.getElementById('checkUpdateBtn')?.addEventListener('click', () => {
 
 async function loadHomeFeed() {
     resultsHeading.textContent = 'Популярные треки';
-    resultsCount.textContent = 'Загрузка лучших композиций...';
-    try {
-        const res = await fetch('/api/search-music', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query: 'KME Miyagi MACAN' }),
-        });
-        if (res.ok) {
-            const data = await res.json();
-            if (data.tracks && data.tracks.length > 0) {
-                renderTracksGrid(tracksContainer, data.tracks);
-                resultsHeading.textContent = 'Популярные треки';
-                resultsCount.textContent = `Топ треков: ${data.tracks.length} (полные версии)`;
-                return;
+    resultsCount.textContent = 'Загрузка рекомендаций...';
+    let tracks = null;
+    if (!isStandaloneApp) {
+        try {
+            const res = await fetch('/api/search-music', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: 'Miyagi Macan Дора' }),
+                signal: AbortSignal.timeout(5000)
+            });
+            if (res.ok) {
+                const data = await res.json();
+                if (data.tracks && data.tracks.length > 0) {
+                    tracks = data.tracks;
+                }
             }
-        }
-    } catch (_) {}
+        } catch (_) {}
+    }
 
-    searchMusic('KME Джентльмены');
+    if (!tracks || tracks.length === 0) {
+        try {
+            tracks = await searchMusicDirectly('Miyagi Macan Дора');
+        } catch (_) {}
+    }
+
+    if (tracks && tracks.length > 0) {
+        currentQueue = tracks;
+        renderTracksGrid(tracksContainer, tracks);
+        resultsHeading.textContent = 'Популярные треки';
+        resultsCount.textContent = `Треков: ${tracks.length} (онлайн)`;
+    } else {
+        searchMusic('Miyagi Macan');
+    }
 }
 
 // ==========================================
@@ -2349,10 +2670,10 @@ async function openLyricsForTrack(track) {
 
     lyricsModal?.classList.add('visible');
 
-    if (lyricsTrackCover) lyricsTrackCover.src = track.thumbnail || '/icon.png';
+    if (lyricsTrackCover) lyricsTrackCover.src = track.thumbnail || 'icon.png';
     if (lyricsTrackTitle) lyricsTrackTitle.textContent = decodeHtml(track.title || 'Песня');
     if (lyricsTrackArtist) lyricsTrackArtist.textContent = decodeHtml(track.artist || 'DodoSpoti');
-    if (lyricsAmbientGlow) lyricsAmbientGlow.style.backgroundImage = `url('${track.thumbnail || '/icon.png'}')`;
+    if (lyricsAmbientGlow) lyricsAmbientGlow.style.backgroundImage = `url('${track.thumbnail || 'icon.png'}')`;
 
     updateLyricsPlaySyncButtonState();
 
