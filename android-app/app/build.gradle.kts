@@ -84,4 +84,7 @@ dependencies {
 
   // WebKit for secure asset loading and modern WebView features
   implementation("androidx.webkit:webkit:1.12.1")
+
+  // Android Media Style Notification for Lock Screen Media Widget
+  implementation("androidx.media:media:1.7.0")
 }

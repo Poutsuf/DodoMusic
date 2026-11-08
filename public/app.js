@@ -456,6 +456,22 @@ function syncPlayPauseUI() {
     if (typeof updateLyricsPlaySyncButtonState === 'function') {
         updateLyricsPlaySyncButtonState();
     }
+
+    // Синхронизация с системным виджетом экрана блокировки и шторки Android
+    if (window.AndroidBridge && typeof window.AndroidBridge.updateMediaNotification === 'function') {
+        if (activeTrack) {
+            window.AndroidBridge.updateMediaNotification(
+                activeTrack.title || 'DodoSpoti',
+                activeTrack.artist || 'Свободная музыка',
+                activeTrack.thumbnail || '',
+                Boolean(isPlaying)
+            );
+        } else {
+            if (typeof window.AndroidBridge.closeMediaNotification === 'function') {
+                window.AndroidBridge.closeMediaNotification();
+            }
+        }
+    }
 }
 
 audioPlayer.volume = Number(volumeBar.value) / 100;
@@ -1457,6 +1473,17 @@ async function playTrackAtIndex(index) {
         } catch (_) {}
     }
 
+    if (window.AndroidBridge && typeof window.AndroidBridge.updateMediaNotification === 'function') {
+        try {
+            window.AndroidBridge.updateMediaNotification(
+                cleanTitle || 'DodoSpoti',
+                cleanArtist || 'Свободная музыка',
+                track.thumbnail || '',
+                true
+            );
+        } catch (_) {}
+    }
+
     // Запускаем подбор умной волны для этого трека
     if (isAutoWave) {
         waveQueue = currentQueue.slice(currentIndex + 1);
@@ -1700,8 +1727,8 @@ if (downloadCurrentBtn) {
     });
 }
 
-// Управление плеером
-playPauseBtn.addEventListener('click', () => {
+// Управление плеером и глобальные вызовы для Android Lock Screen виджета
+function togglePlayPause() {
     if (currentIndex === -1 && currentQueue.length > 0) {
         playTrackAtIndex(0);
         return;
@@ -1711,7 +1738,23 @@ playPauseBtn.addEventListener('click', () => {
     } else {
         audioPlayer.play().catch(() => {});
     }
-});
+}
+
+function stopPlayback() {
+    audioPlayer.pause();
+    audioPlayer.currentTime = 0;
+    if (window.AndroidBridge && typeof window.AndroidBridge.closeMediaNotification === 'function') {
+        window.AndroidBridge.closeMediaNotification();
+    }
+}
+
+// Экспорт функций для управления с экрана блокировки и Bluetooth
+window.togglePlayPause = togglePlayPause;
+window.playNextTrack = playNext;
+window.playPrevTrack = playPrev;
+window.stopPlayback = stopPlayback;
+
+playPauseBtn.addEventListener('click', togglePlayPause);
 
 nextBtn.addEventListener('click', playNext);
 prevBtn.addEventListener('click', playPrev);
@@ -2649,6 +2692,13 @@ const FALLBACK_POPULAR_TRACKS = [
 async function loadHomeFeed() {
     resultsHeading.textContent = 'Популярные треки';
     resultsCount.textContent = 'Загрузка рекомендаций...';
+
+    // Мгновенно отображаем базовые популярные треки, чтобы экран не был пустым
+    if (!currentQueue || currentQueue.length === 0) {
+        currentQueue = FALLBACK_POPULAR_TRACKS;
+        renderTracksGrid(tracksContainer, FALLBACK_POPULAR_TRACKS);
+    }
+
     let tracks = null;
     if (!isStandaloneApp) {
         try {
