@@ -5,19 +5,25 @@ const http = require('http');
 const express = require('express');
 const cors = require('cors');
 
-const debugLogPath = path.join(__dirname, 'electron-debug.log');
-fs.writeFileSync(debugLogPath, `[INIT] Process started at ${new Date().toISOString()}\n`);
+function logDebug(msg) {
+    try {
+        const logDir = app.getPath('userData');
+        if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
+        fs.appendFileSync(path.join(logDir, 'electron-debug.log'), msg);
+    } catch (_) {}
+}
+logDebug(`[INIT] Process started at ${new Date().toISOString()}\n`);
 process.on('uncaughtException', (err) => {
-    fs.appendFileSync(debugLogPath, `[CRASH] uncaughtException: ${err && (err.stack || err)}\n`);
+    logDebug(`[CRASH] uncaughtException: ${err && (err.stack || err)}\n`);
 });
 process.on('unhandledRejection', (reason) => {
-    fs.appendFileSync(debugLogPath, `[CRASH] unhandledRejection: ${reason && (reason.stack || reason)}\n`);
+    logDebug(`[CRASH] unhandledRejection: ${reason && (reason.stack || reason)}\n`);
 });
 process.on('exit', (code) => {
-    fs.appendFileSync(debugLogPath, `[PROCESS_EXIT] code: ${code}\n`);
+    logDebug(`[PROCESS_EXIT] code: ${code}\n`);
 });
 process.on('beforeExit', (code) => {
-    fs.appendFileSync(debugLogPath, `[BEFORE_EXIT] code: ${code}\n`);
+    logDebug(`[BEFORE_EXIT] code: ${code}\n`);
 });
 
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
@@ -1091,15 +1097,15 @@ function setupSystemTray() {
             }
         });
     } catch (err) {
-        fs.appendFileSync(debugLogPath, `[TRAY_ERROR] ${err.message}\n`);
+        logDebug(`[TRAY_ERROR] ${err.message}\n`);
     }
 }
 
 async function createWindow() {
-    fs.appendFileSync(debugLogPath, `[CREATE_WINDOW] Starting embedded server...\n`);
+    logDebug(`[CREATE_WINDOW] Starting embedded server...\n`);
     const { server, port } = await startEmbeddedServer();
     serverInstance = server;
-    fs.appendFileSync(debugLogPath, `[CREATE_WINDOW] Embedded server running on port ${port}\n`);
+    logDebug(`[CREATE_WINDOW] Embedded server running on port ${port}\n`);
 
     const icoPath = path.join(__dirname, 'public', 'icon.ico');
     const pngIconPath = path.join(__dirname, 'public', 'icon.png');
@@ -1126,22 +1132,22 @@ async function createWindow() {
     try {
         mainWindow.setIcon(appIcon);
     } catch (_) {}
-    fs.appendFileSync(debugLogPath, `[CREATE_WINDOW] BrowserWindow created\n`);
+    logDebug(`[CREATE_WINDOW] BrowserWindow created\n`);
 
     setupSystemTray();
     mainWindow.webContents.on('render-process-gone', (event, details) => {
-        fs.appendFileSync(debugLogPath, `[RENDERER_GONE] reason: ${details.reason}, exitCode: ${details.exitCode}\n`);
+        logDebug(`[RENDERER_GONE] reason: ${details.reason}, exitCode: ${details.exitCode}\n`);
     });
     mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
-        fs.appendFileSync(debugLogPath, `[LOAD_FAILED] code: ${errorCode}, desc: ${errorDescription}\n`);
+        logDebug(`[LOAD_FAILED] code: ${errorCode}, desc: ${errorDescription}\n`);
     });
     mainWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
-        fs.appendFileSync(debugLogPath, `[CONSOLE] (${level}) ${message} [${sourceId}:${line}]\n`);
+        logDebug(`[CONSOLE] (${level}) ${message} [${sourceId}:${line}]\n`);
     });
 
     mainWindow.setMenuBarVisibility(false);
     mainWindow.loadURL(`http://127.0.0.1:${port}`);
-    fs.appendFileSync(debugLogPath, `[CREATE_WINDOW] loadURL called\n`);
+    logDebug(`[CREATE_WINDOW] loadURL called\n`);
 
     mainWindow.webContents.setWindowOpenHandler(({ url }) => {
         if (url.startsWith('http')) {
@@ -1151,10 +1157,10 @@ async function createWindow() {
     });
 
     mainWindow.on('close', (e) => {
-        fs.appendFileSync(debugLogPath, `[WINDOW_CLOSE] mainWindow close event\n`);
+        logDebug(`[WINDOW_CLOSE] mainWindow close event\n`);
     });
     mainWindow.on('closed', () => {
-        fs.appendFileSync(debugLogPath, `[WINDOW_CLOSED] mainWindow closed event\n`);
+        logDebug(`[WINDOW_CLOSED] mainWindow closed event\n`);
         mainWindow = null;
     });
 }
@@ -1162,15 +1168,15 @@ async function createWindow() {
 app.whenReady().then(createWindow);
 
 app.on('will-quit', (e) => {
-    fs.appendFileSync(debugLogPath, `[APP] will-quit event\n`);
+    logDebug(`[APP] will-quit event\n`);
 });
 
 app.on('quit', (e, exitCode) => {
-    fs.appendFileSync(debugLogPath, `[APP] quit event, exitCode: ${exitCode}\n`);
+    logDebug(`[APP] quit event, exitCode: ${exitCode}\n`);
 });
 
 app.on('window-all-closed', () => {
-    fs.appendFileSync(debugLogPath, `[APP] window-all-closed fired\n`);
+    logDebug(`[APP] window-all-closed fired\n`);
     if (serverInstance) {
         try {
             serverInstance.close();
