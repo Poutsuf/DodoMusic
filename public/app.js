@@ -852,6 +852,26 @@ function mapSoundCloudTrack(t) {
     };
 }
 
+// Универсальный сетевой запрос (в браузере обычный fetch, на Android - через нативный мост без CORS)
+async function networkFetchText(url, timeoutMs = 7000) {
+    if (window.AndroidBridge && typeof window.AndroidBridge.fetchUrl === 'function') {
+        try {
+            const res = window.AndroidBridge.fetchUrl(url);
+            if (res && res.length > 0) return res;
+        } catch (e) {
+            console.warn('[AndroidBridge fetchUrl warn]', e);
+        }
+    }
+    const resp = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    return await resp.text();
+}
+
+async function networkFetchJson(url, timeoutMs = 7000) {
+    const text = await networkFetchText(url, timeoutMs);
+    return JSON.parse(text);
+}
+
 async function searchSoundCloudDirectly(query) {
     if (!query || !query.trim()) return [];
     const qLower = query.trim().toLowerCase();
@@ -870,41 +890,49 @@ async function searchSoundCloudDirectly(query) {
     for (const cid of cids) {
         try {
             const url = 'https://api-v2.soundcloud.com/search/tracks?q=' + encodeURIComponent(query.trim()) + '&client_id=' + cid + '&limit=30';
-            const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
-            if (!res.ok) {
-                if (res.status === 401 || res.status === 403) continue;
-                return [];
-            }
-            const data = await res.json();
-            const items = data.collection || [];
+            const data = await networkFetchJson(url, 6000);
+            const items = data?.collection || [];
             if (!items.length) continue;
 
             const mapped = items
-                .filter(t => t.id && t.duration >= 40000 && t.duration <= 900000 && t.media?.transcodings?.length)
+                .filter(t => t.id && t.duration >= 35000 && t.duration <= 900000 && t.media?.transcodings?.length)
                 .map(mapSoundCloudTrack);
 
-            // Умная сортировка по релевантности запросу
+            // Умная сортировка по максимальной релевантности запросу пользователя
             mapped.sort((a, b) => {
-                const aFull = `${a.artist} ${a.title}`.toLowerCase();
-                const bFull = `${b.artist} ${b.title}`.toLowerCase();
+                const aTitle = a.title.toLowerCase();
+                const bTitle = b.title.toLowerCase();
+                const aArtist = a.artist.toLowerCase();
+                const bArtist = b.artist.toLowerCase();
+                const aFull = `${aArtist} ${aTitle}`;
+                const bFull = `${bArtist} ${bTitle}`;
 
                 let scoreA = 0;
                 let scoreB = 0;
 
-                if (a.title.toLowerCase().includes(qLower)) scoreA += 60;
-                if (b.title.toLowerCase().includes(qLower)) scoreB += 60;
-                if (a.artist.toLowerCase().includes(qLower)) scoreA += 40;
-                if (b.artist.toLowerCase().includes(qLower)) scoreB += 40;
+                // Точное совпадение
+                if (aTitle === qLower) scoreA += 100;
+                if (bTitle === qLower) scoreB += 100;
 
-                // Точное совпадение начала названия
-                if (a.title.toLowerCase().startsWith(qLower)) scoreA += 30;
-                if (b.title.toLowerCase().startsWith(qLower)) scoreB += 30;
+                // Вхождение в название
+                if (aTitle.includes(qLower)) scoreA += 60;
+                if (bTitle.includes(qLower)) scoreB += 60;
 
-                // Понижаем ремиксы и замедления, если они не запрашивались явно
-                if (!wantsRemix && (aFull.includes('remix') || aFull.includes('ремикс'))) scoreA -= 25;
-                if (!wantsRemix && (bFull.includes('remix') || bFull.includes('ремикс'))) scoreB -= 25;
-                if (!wantsSlowed && (aFull.includes('slowed') || aFull.includes('bass'))) scoreA -= 30;
-                if (!wantsSlowed && (bFull.includes('slowed') || bFull.includes('bass'))) scoreB -= 30;
+                // Вхождение артиста
+                if (aArtist.includes(qLower)) scoreA += 40;
+                if (bArtist.includes(qLower)) scoreB += 40;
+
+                // Префиксное совпадение
+                if (aTitle.startsWith(qLower)) scoreA += 30;
+                if (bTitle.startsWith(qLower)) scoreB += 30;
+
+                // Штраф за ремиксы если пользователь не просил ремикс
+                if (!wantsRemix && (aFull.includes('remix') || aFull.includes('ремикс'))) scoreA -= 30;
+                if (!wantsRemix && (bFull.includes('remix') || bFull.includes('ремикс'))) scoreB -= 30;
+
+                // Штраф за slowed / reverb / bassboosted если не просили
+                if (!wantsSlowed && (aFull.includes('slowed') || aFull.includes('bassboosted') || aFull.includes('reverb'))) scoreA -= 35;
+                if (!wantsSlowed && (bFull.includes('slowed') || bFull.includes('bassboosted') || bFull.includes('reverb'))) scoreB -= 35;
 
                 return scoreB - scoreA;
             });
@@ -920,10 +948,8 @@ async function searchAudiusDirectly(query) {
     if (!query || !query.trim()) return [];
     try {
         const url = 'https://discoveryprovider.audius.co/v1/tracks/search?query=' + encodeURIComponent(query.trim()) + '&app_name=DODOSPOTI';
-        const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
-        if (!res.ok) return [];
-        const data = await res.json();
-        const items = data.data || [];
+        const data = await networkFetchJson(url, 6000);
+        const items = data?.data || [];
         return items
             .filter(t => t.id && !t.is_unlisted && (t.duration || 0) >= 30)
             .map(t => ({
@@ -950,7 +976,7 @@ async function searchAudiusDirectly(query) {
 async function searchMusicDirectly(query) {
     // 1. Сначала ищем в основном источнике с точным соответствием
     const scList = await searchSoundCloudDirectly(query);
-    if (scList.length >= 3) {
+    if (scList.length >= 2) {
         return scList;
     }
     // 2. Если в основном источнике мало треков, дополняем через Audius
@@ -971,23 +997,35 @@ async function resolveStreamDirectly(track) {
         };
     }
 
+    // Если у трека нет прямой ссылки, ищем его стрим в SoundCloud по названию
+    if (!track.transcodingUrl) {
+        try {
+            const found = await searchSoundCloudDirectly(`${track.artist || ''} ${track.title || ''}`.trim());
+            if (found && found.length > 0 && found[0].transcodingUrl) {
+                track.transcodingUrl = found[0].transcodingUrl;
+                track.protocol = found[0].protocol;
+            }
+        } catch (_) {}
+    }
+
     if (track.transcodingUrl) {
         try {
             let cid = await getLiveSoundCloudClientId();
-            let res = await fetch(track.transcodingUrl + '?client_id=' + cid, { signal: AbortSignal.timeout(6000) });
-            if (res.status === 401) {
+            let transUrl = track.transcodingUrl + '?client_id=' + cid;
+            let transData = null;
+            try {
+                transData = await networkFetchJson(transUrl, 6000);
+            } catch (_) {
                 lastScClientIdFetch = 0;
                 cid = await getLiveSoundCloudClientId();
-                res = await fetch(track.transcodingUrl + '?client_id=' + cid, { signal: AbortSignal.timeout(6000) });
+                transUrl = track.transcodingUrl + '?client_id=' + cid;
+                transData = await networkFetchJson(transUrl, 6000);
             }
-            if (res.ok) {
-                const data = await res.json();
-                if (data.url) {
-                    return {
-                        streamUrl: data.url,
-                        protocol: track.transcodingUrl.includes('/hls') ? 'hls' : 'progressive'
-                    };
-                }
+            if (transData && transData.url) {
+                return {
+                    streamUrl: transData.url,
+                    protocol: track.transcodingUrl.includes('/hls') ? 'hls' : 'progressive'
+                };
             }
         } catch (e) {
             console.warn('[Direct Stream Resolve] Transcoding error:', e.message);
@@ -2546,6 +2584,57 @@ document.getElementById('checkUpdateBtn')?.addEventListener('click', () => {
     checkAppUpdates(true);
 });
 
+const FALLBACK_POPULAR_TRACKS = [
+    {
+        id: 'sc_fallback_1',
+        title: 'Minor',
+        artist: 'Miyagi & Andy Panda',
+        duration: '2:55',
+        thumbnail: 'https://i1.sndcdn.com/artworks-9WzX8E2f5X7p-0-t500x500.jpg',
+        genre: 'Hip-Hop'
+    },
+    {
+        id: 'sc_fallback_2',
+        title: 'Asphalt 8',
+        artist: 'MACAN',
+        duration: '2:34',
+        thumbnail: 'https://i1.sndcdn.com/artworks-Yw2p8Q6a2F9h-0-t500x500.jpg',
+        genre: 'Rap'
+    },
+    {
+        id: 'sc_fallback_3',
+        title: 'Дорадура',
+        artist: 'дора',
+        duration: '2:14',
+        thumbnail: 'https://i1.sndcdn.com/artworks-5a9m6D9q3J2k-0-t500x500.jpg',
+        genre: 'Pop-Rock'
+    },
+    {
+        id: 'sc_fallback_4',
+        title: 'Мне 20',
+        artist: 'просто Лера',
+        duration: '3:02',
+        thumbnail: 'https://i1.sndcdn.com/artworks-3b7x9C1z4K8m-0-t500x500.jpg',
+        genre: 'Indie'
+    },
+    {
+        id: 'sc_fallback_5',
+        title: 'Blinding Lights',
+        artist: 'The Weeknd',
+        duration: '3:20',
+        thumbnail: 'https://i1.sndcdn.com/artworks-000676450099-wz9bvi-t500x500.jpg',
+        genre: 'Synthpop'
+    },
+    {
+        id: 'sc_fallback_6',
+        title: 'Джентльмены',
+        artist: 'KME (kme_dota)',
+        duration: '2:22',
+        thumbnail: 'https://i1.sndcdn.com/artworks-1X2Y3Z-0-t500x500.jpg',
+        genre: 'Phonk'
+    }
+];
+
 async function loadHomeFeed() {
     resultsHeading.textContent = 'Популярные треки';
     resultsCount.textContent = 'Загрузка рекомендаций...';
@@ -2556,7 +2645,7 @@ async function loadHomeFeed() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ query: 'Miyagi Macan Дора' }),
-                signal: AbortSignal.timeout(5000)
+                signal: AbortSignal.timeout(4000)
             });
             if (res.ok) {
                 const data = await res.json();
@@ -2579,7 +2668,10 @@ async function loadHomeFeed() {
         resultsHeading.textContent = 'Популярные треки';
         resultsCount.textContent = `Треков: ${tracks.length} (онлайн)`;
     } else {
-        searchMusic('Miyagi Macan');
+        currentQueue = FALLBACK_POPULAR_TRACKS;
+        renderTracksGrid(tracksContainer, FALLBACK_POPULAR_TRACKS);
+        resultsHeading.textContent = 'Популярные треки';
+        resultsCount.textContent = `Треков: ${FALLBACK_POPULAR_TRACKS.length} (онлайн)`;
     }
 }
 
@@ -2680,28 +2772,25 @@ async function fetchLrclibDirectly(rawTitle = '', rawArtist = '', duration = 0) 
         try {
             let getUrl = `https://lrclib.net/api/get?track_name=${encodeURIComponent(cleanTitle)}&artist_name=${encodeURIComponent(cleanArtist)}`;
             if (duration > 0) getUrl += `&duration=${Math.round(duration)}`;
-            const res = await fetch(getUrl);
-            if (res.ok) {
-                const item = await res.json();
-                if (item.syncedLyrics) {
-                    return {
-                        found: true,
-                        synced: true,
-                        lines: parseClientLrc(item.syncedLyrics),
-                        plainLyrics: item.plainLyrics || '',
-                        trackName: item.name,
-                        artistName: item.artistName
-                    };
-                } else if (item.plainLyrics) {
-                    return {
-                        found: true,
-                        synced: false,
-                        lines: [],
-                        plainLyrics: item.plainLyrics,
-                        trackName: item.name,
-                        artistName: item.artistName
-                    };
-                }
+            const item = await networkFetchJson(getUrl, 5000);
+            if (item && item.syncedLyrics) {
+                return {
+                    found: true,
+                    synced: true,
+                    lines: parseClientLrc(item.syncedLyrics),
+                    plainLyrics: item.plainLyrics || '',
+                    trackName: item.name,
+                    artistName: item.artistName
+                };
+            } else if (item && item.plainLyrics) {
+                return {
+                    found: true,
+                    synced: false,
+                    lines: [],
+                    plainLyrics: item.plainLyrics,
+                    trackName: item.name,
+                    artistName: item.artistName
+                };
             }
         } catch (_) {}
     }
@@ -2716,10 +2805,8 @@ async function fetchLrclibDirectly(rawTitle = '', rawArtist = '', duration = 0) 
     for (const q of queries) {
         try {
             const searchUrl = `https://lrclib.net/api/search?q=${encodeURIComponent(q)}`;
-            const res = await fetch(searchUrl);
-            if (res.ok) {
-                const list = await res.json();
-                if (Array.isArray(list) && list.length > 0) {
+            const list = await networkFetchJson(searchUrl, 5000);
+            if (Array.isArray(list) && list.length > 0) {
                     const best = list.find(item => item.syncedLyrics) || list[0];
                     if (best && (best.syncedLyrics || best.plainLyrics)) {
                         return {

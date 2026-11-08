@@ -1,13 +1,13 @@
 package com.dodospoti.app
 
 import android.annotation.SuppressLint
-import android.app.AlertDialog
 import android.content.Context
-import android.graphics.Bitmap
 import android.graphics.Color
 import android.os.Bundle
+import android.view.View
 import android.view.ViewGroup
 import android.webkit.ConsoleMessage
+import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
@@ -15,10 +15,6 @@ import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import androidx.webkit.WebViewAssetLoader
-import android.widget.EditText
-import android.widget.FrameLayout
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
@@ -26,23 +22,19 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.webkit.WebViewAssetLoader
 import com.dodospoti.app.ui.theme.DodoSpotiTheme
+import java.net.HttpURLConnection
+import java.net.URL
 
 class MainActivity : ComponentActivity() {
 
@@ -73,7 +65,6 @@ class MainActivity : ComponentActivity() {
                         .fillMaxSize()
                         .background(androidx.compose.ui.graphics.Color(0xFF06070B))
                         .systemBarsPadding()
-                        .imePadding()
                 ) {
                     DodoSpotiPlayerScreen(
                         onWebViewCreated = { webView ->
@@ -90,6 +81,36 @@ class MainActivity : ComponentActivity() {
         dodoWebView = null
         super.onDestroy()
     }
+}
+
+class AndroidBridgeInterface(private val context: Context) {
+    @JavascriptInterface
+    fun fetchUrl(urlStr: String): String {
+        return try {
+            val url = URL(urlStr)
+            val conn = (url.openConnection() as HttpURLConnection).apply {
+                requestMethod = "GET"
+                connectTimeout = 7000
+                readTimeout = 7000
+                setRequestProperty(
+                    "User-Agent",
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+                )
+                setRequestProperty("Accept", "*/*")
+                if (urlStr.contains("soundcloud.com")) {
+                    setRequestProperty("Origin", "https://soundcloud.com")
+                    setRequestProperty("Referer", "https://soundcloud.com/")
+                }
+            }
+            conn.inputStream.bufferedReader().use { it.readText() }
+        } catch (e: Exception) {
+            android.util.Log.e("DodoSpoti", "fetchUrl error for $urlStr: ${e.message}")
+            ""
+        }
+    }
+
+    @JavascriptInterface
+    fun getPlatform(): String = "android"
 }
 
 @SuppressLint("SetJavaScriptEnabled")
@@ -121,6 +142,11 @@ fun DodoSpotiPlayerScreen(
                     )
                     setBackgroundColor(Color.parseColor("#06070b"))
 
+                    // Включаем аппаратное ускорение для максимальной плавности
+                    setLayerType(View.LAYER_TYPE_HARDWARE, null)
+                    isVerticalScrollBarEnabled = false
+                    isHorizontalScrollBarEnabled = false
+
                     settings.apply {
                         javaScriptEnabled = true
                         domStorageEnabled = true
@@ -131,15 +157,24 @@ fun DodoSpotiPlayerScreen(
                         allowContentAccess = true
                         allowFileAccessFromFileURLs = true
                         allowUniversalAccessFromFileURLs = true
-                        loadWithOverviewMode = false
-                        useWideViewPort = false
+
+                        // Корректный мобильный Viewport: страница подстраивается точно под ширину экрана
+                        useWideViewPort = true
+                        loadWithOverviewMode = true
+
                         cacheMode = WebSettings.LOAD_DEFAULT
-                        userAgentString = "$userAgentString DodoSpotiAndroid/1.2"
+                        userAgentString = "$userAgentString DodoSpotiAndroid/1.3"
                     }
+
+                    // Добавляем нативный мост для HTTP запросов без CORS
+                    addJavascriptInterface(AndroidBridgeInterface(context), "AndroidBridge")
 
                     webChromeClient = object : WebChromeClient() {
                         override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
-                            android.util.Log.d("DodoSpoti", "[JS] ${consoleMessage?.message()} (${consoleMessage?.lineNumber()})")
+                            android.util.Log.d(
+                                "DodoSpoti",
+                                "[JS] ${consoleMessage?.message()} (${consoleMessage?.lineNumber()})"
+                            )
                             return true
                         }
                     }
