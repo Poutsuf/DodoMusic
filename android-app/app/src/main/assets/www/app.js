@@ -112,8 +112,8 @@ const I18N = {
         clear_history_btn: 'Очистить всё',
         taste_dna_title: 'ДНК Вашего Вкуса (Анализ предпочтений)',
         update_badge_ok: 'Актуально',
-        spotify_top_hits: '🟢 Мировой ТОП хитов',
-        spotify_russia_hits: '🔥 Главный хит-парад',
+        chart_top_hits: '🟢 Мировой ТОП хитов',
+        chart_russia_hits: '🔥 Главный хит-парад',
         tag_hit_day: 'ХИТ ДНЯ',
         tag_top_hits: 'ТОП ХИТЫ',
         tag_trends: 'ТРЕНДЫ',
@@ -206,8 +206,8 @@ const I18N = {
         clear_history_btn: 'Clear All',
         taste_dna_title: 'Taste DNA (Preference Analysis)',
         update_badge_ok: 'Up to date',
-        spotify_top_hits: '🟢 Top Chart Hits',
-        spotify_russia_hits: '🔥 Chart Hit Parade',
+        chart_top_hits: '🟢 Top Chart Hits',
+        chart_russia_hits: '🔥 Chart Hit Parade',
         tag_hit_day: 'HIT OF THE DAY',
         tag_top_hits: 'TOP HITS',
         tag_trends: 'TRENDING',
@@ -1175,9 +1175,9 @@ function renderTracksGrid(container, list, options = {}) {
         const cleanTitle = decodeHtml(track.title);
         const cleanArtist = decodeHtml(track.artist);
         const durationText = track.duration || '';
-        const isChart = track.source === 'spotify' || track.isChart;
+        const isChart = track.source === 'chart' || track.isChart;
         const platformBadge = isChart
-            ? '<span class="platform-pill-badge spotify" style="position:absolute; top:8px; left:8px; z-index:3; font-size:10px; padding:3px 7px; border-radius:6px; background:#1ed760; color:#000; font-weight:800; box-shadow:0 2px 8px rgba(30,215,96,0.5);">Chart</span>'
+            ? '<span class="platform-pill-badge chart" style="position:absolute; top:8px; left:8px; z-index:3; font-size:10px; padding:3px 7px; border-radius:6px; background:#1ed760; color:#000; font-weight:800; box-shadow:0 2px 8px rgba(30,215,96,0.5);">Chart</span>'
             : (track.source === 'audius' ? '<span class="platform-pill-badge audius" style="position:absolute; top:8px; left:8px; z-index:3; font-size:10px; padding:3px 7px; border-radius:6px; background:#cc33ff; color:#fff; font-weight:800;">Audius</span>' : '');
 
         const removeBtnHtml = options.isWaveView
@@ -1502,7 +1502,7 @@ async function playTrackAtIndex(index) {
         const params = new URLSearchParams({
             id: track.id,
             trackId: track.id,
-            source: track.source || (track.isChart ? 'spotify' : 'soundcloud'),
+            source: track.source || (track.isChart ? 'chart' : 'soundcloud'),
             transcodingUrl: track.transcodingUrl || '',
             streamUrl: track.streamUrl || '',
             previewUrl: track.previewUrl || track.audioPreview || '',
@@ -1716,7 +1716,7 @@ if (downloadCurrentBtn) {
         showSystemNotification('Скачивание трека', `Загрузка «${decodeHtml(track.title)}»...`, 'music', track.thumbnail || 'icon.png');
         const params = new URLSearchParams({
             trackId: track.id,
-            source: track.source || (track.isChart ? 'spotify' : 'soundcloud'),
+            source: track.source || (track.isChart ? 'chart' : 'soundcloud'),
             transcodingUrl: track.transcodingUrl || '',
             streamUrl: track.streamUrl || '',
             previewUrl: track.previewUrl || track.audioPreview || '',
@@ -2585,7 +2585,7 @@ async function checkAppUpdates(manual = false) {
                 updateBadgeBtn.title = 'У вас установлена последняя версия v1.4';
             }
             if (updateBadgeLabel) {
-                updateBadgeLabel.textContent = 'v1.4 Актуально';
+                updateBadgeLabel.textContent = 'Актуально';
                 updateBadgeLabel.style.color = '';
             }
             if (updateStatusText) {

@@ -1644,14 +1644,14 @@ body {
     font-size: 17px;
 }
 
-/* ИСТОЧНИК SPOTIFY И БЕЙДЖИ */
-.platform-pill-badge.spotify {
+/* ИСТОЧНИК CHART И БЕЙДЖИ */
+.platform-pill-badge.chart {
     background: rgba(30, 215, 96, 0.22);
     color: #1ed760;
     border: 1px solid rgba(30, 215, 96, 0.45);
 }
 
-.mood-card.spotify-card:hover {
+.mood-card.chart-card:hover {
     border-color: #1ed760;
     box-shadow: 0 8px 28px rgba(30, 215, 96, 0.35);
 }

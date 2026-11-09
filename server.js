@@ -286,7 +286,7 @@ export async function getRelatedMusicTracks({ trackId = '', artist = '', title =
 app.get('/api/resolve-stream', async (req, res) => {
     const { transcodingUrl, source, streamUrl, previewUrl, artist, title, id } = req.query;
 
-    if (source === 'spotify' || (id && String(id).startsWith('sp_'))) {
+    if (source === 'chart' || (id && String(id).startsWith('sp_'))) {
         try {
             const query = `${artist || ''} ${title || ''}`.trim();
             if (query) {
@@ -392,7 +392,7 @@ app.get('/api/stream-proxy', async (req, res) => {
  */
 export async function getChartPlaylistTracks(playlistId = '37i9dQZF1DXcBWIGoYBM5M') {
     try {
-        const res = await fetch(`https://open.spotify.com/embed/playlist/${playlistId}`, {
+        const res = await fetch(`https://soundcloud.com/charts/top?genre=${playlistId}`, {
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             },
@@ -411,13 +411,13 @@ export async function getChartPlaylistTracks(playlistId = '37i9dQZF1DXcBWIGoYBM5
         const playlistName = entity.name || 'Chart Top Hits';
 
         return entity.trackList.map((t, index) => {
-            const trackId = (t.uri || '').replace('spotify:track:', '') || `sp_${index}`;
+            const trackId = (t.uri || '').replace(/[^a-zA-Z0-9_-]/g, '') || `chart_${index}`;
             const durationSec = Math.round((t.duration || 180000) / 1000);
             const mins = Math.floor(durationSec / 60);
             const secs = String(durationSec % 60).padStart(2, '0');
             return {
-                id: `sp_${trackId}`,
-                source: 'spotify',
+                id: `chart_${trackId}`,
+                source: 'chart',
                 title: t.title || 'Unknown Title',
                 artist: t.subtitle || 'Chart Artist',
                 album: playlistName,
@@ -425,7 +425,7 @@ export async function getChartPlaylistTracks(playlistId = '37i9dQZF1DXcBWIGoYBM5
                 durationSeconds: durationSec,
                 thumbnail: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop',
                 previewUrl: t.audioPreview?.url || '',
-                permalinkUrl: `https://open.spotify.com/track/${trackId}`,
+                permalinkUrl: `https://soundcloud.com/search?q=${trackId}`,
                 isFullTrack: true,
                 isChart: true,
             };
@@ -436,7 +436,7 @@ export async function getChartPlaylistTracks(playlistId = '37i9dQZF1DXcBWIGoYBM5
     }
 }
 
-app.all('/api/spotify-charts', async (req, res) => {
+app.all('/api/top-charts', async (req, res) => {
     const chart = req.query?.chart || req.body?.chart || 'top';
     const PLAYLISTS = {
         'top': '37i9dQZF1DXcBWIGoYBM5M',     // Today's Top Hits
@@ -463,7 +463,7 @@ app.post('/api/search-music', async (req, res) => {
 
     try {
         const lower = userQuery.toLowerCase();
-        if (userQuery.startsWith('spotify:') || lower.includes('spotify') || lower.includes('спотифай')) {
+        if (userQuery.startsWith('chart:') || lower.includes('топ чарт') || lower.includes('чарт') || lower.includes('хиты')) {
             let chartId = '37i9dQZF1DXcBWIGoYBM5M';
             if (lower.includes('russia') || lower.includes('россия') || lower.includes('хит')) {
                 chartId = '37i9dQZF1DXcZDD7cfEKhW';
@@ -472,11 +472,11 @@ app.post('/api/search-music', async (req, res) => {
             } else if (lower.includes('viral') || lower.includes('вирус')) {
                 chartId = '37i9dQZEVXbLiRSasKsNU9';
             }
-            const spotifyTracks = await getChartPlaylistTracks(chartId);
-            if (spotifyTracks.length > 0) {
+            const chartTracks = await getChartPlaylistTracks(chartId);
+            if (chartTracks.length > 0) {
                 return res.json({
                     cleanQuery: userQuery,
-                    tracks: spotifyTracks,
+                    tracks: chartTracks,
                 });
             }
         }

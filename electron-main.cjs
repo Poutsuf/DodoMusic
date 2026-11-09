@@ -27,7 +27,7 @@ process.on('beforeExit', (code) => {
 });
 
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
-app.setAppUserModelId('DodoMusic.Player.v1');
+app.setAppUserModelId('com.dodomusic.app');
 
 let cachedScClientId = '39AVoiZVrdvJEMFLH8T0c5WGshQaAPRJ';
 let lastClientIdFetch = 0;
@@ -834,14 +834,14 @@ function startEmbeddedServer() {
             }
         });
 
-        const CURRENT_APP_VERSION = 'v1.1';
+        const CURRENT_APP_VERSION = 'v1.4';
 
         exp.all('/api/check-update', async (req, res) => {
-            const repo = (req.body?.repo || req.query?.repo || 'foridorpo-blip/DodoMusic').trim();
+            const repo = (req.body?.repo || req.query?.repo || 'Poutsuf/DodoMusic-Windows').trim();
             try {
                 const ghRes = await fetch(`https://api.github.com/repos/${repo}/releases/latest`, {
                     headers: {
-                        'User-Agent': 'DodoMusic-Desktop-v1.1',
+                        'User-Agent': 'DodoMusic-Desktop-v1.4',
                         'Accept': 'application/vnd.github.v3+json',
                     },
                     signal: AbortSignal.timeout(5000),
@@ -860,9 +860,9 @@ function startEmbeddedServer() {
                     if (matchLatest) {
                         const lMajor = parseInt(matchLatest[1], 10);
                         const lMinor = parseInt(matchLatest[2], 10);
-                        hasUpdate = (lMajor > 1) || (lMajor === 1 && lMinor > 1);
+                        hasUpdate = (lMajor > 1) || (lMajor === 1 && lMinor > 4);
                     } else {
-                        hasUpdate = cleanTag !== 'v1.1' && cleanTag !== 'v1.0' && cleanTag !== 'dodomusic';
+                        hasUpdate = cleanTag !== 'v1.4' && cleanTag !== 'v1.0' && cleanTag !== 'dodomusic';
                     }
 
                     return res.json({
@@ -880,7 +880,7 @@ function startEmbeddedServer() {
                 currentVersion: CURRENT_APP_VERSION,
                 latestVersion: CURRENT_APP_VERSION,
                 hasUpdate: false,
-                message: 'У вас установлена актуальная версия DodoMusic (v1.1).',
+                message: 'У вас установлена актуальная версия DodoMusic (v1.4).',
                 downloadUrl: `https://github.com/${repo}/releases`,
             });
         });
@@ -891,7 +891,7 @@ function startEmbeddedServer() {
                 if (Notification.isSupported()) {
                     const iconPath = icon || path.join(__dirname, 'public', 'icon.png');
                     const notif = new Notification({
-                        title: title || 'DodoMusic v1.1',
+                        title: title || 'DodoMusic v1.4',
                         body: body || '',
                         icon: iconPath,
                     });
@@ -1021,15 +1021,17 @@ let tray = null;
 
 function setupSystemTray() {
     try {
-        const iconPath = path.join(__dirname, 'public', 'icon.png');
-        if (!fs.existsSync(iconPath)) return;
+        const icoPath = path.join(__dirname, 'public', 'icon.ico');
+        const pngPath = path.join(__dirname, 'public', 'icon.png');
+        const trayIconPath = fs.existsSync(icoPath) ? icoPath : pngPath;
+        if (!fs.existsSync(trayIconPath)) return;
         if (tray) return;
 
-        tray = new Tray(iconPath);
-        tray.setToolTip('DodoMusic v1.1');
+        tray = new Tray(trayIconPath);
+        tray.setToolTip('DodoMusic v1.4');
 
         const contextMenu = Menu.buildFromTemplate([
-            { label: 'DodoMusic v1.1', enabled: false },
+            { label: 'DodoMusic v1.4', enabled: false },
             { type: 'separator' },
             {
                 label: 'Показать / Скрыть плеер',
@@ -1121,7 +1123,7 @@ async function createWindow() {
         title: 'DodoMusic',
         backgroundColor: '#07080c',
         autoHideMenuBar: true,
-        icon: appIcon,
+        icon: iconFilePath,
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
@@ -1130,7 +1132,7 @@ async function createWindow() {
 
     mainWindow = new BrowserWindow(winOptions);
     try {
-        mainWindow.setIcon(appIcon);
+        mainWindow.setIcon(iconFilePath);
     } catch (_) {}
     logDebug(`[CREATE_WINDOW] BrowserWindow created\n`);
 
